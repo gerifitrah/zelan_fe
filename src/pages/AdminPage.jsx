@@ -1,0 +1,754 @@
+import { useState, useEffect, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { menuApi, categoriesApi, statsApi, authApi, faqApi, getFileUrl } from '../services/api'
+import './AdminPage.css'
+
+function AdminPage() {
+    const [menuItems, setMenuItems] = useState([])
+    const [categories, setCategories] = useState([])
+    const [stats, setStats] = useState({})
+    const [loading, setLoading] = useState(true)
+    const [showModal, setShowModal] = useState(false)
+    const [editingItem, setEditingItem] = useState(null)
+    const [searchTerm, setSearchTerm] = useState('')
+    const [featuredFilter, setFeaturedFilter] = useState('all')
+    const [categoryFilter, setCategoryFilter] = useState('all')
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+    const navigate = useNavigate()
+
+    const [formData, setFormData] = useState({
+        name: '',
+        category_id: '',
+        price: '',
+        price_display: '',
+        description: '',
+        voice_description: '',
+        image_url: '',
+        tag: '',
+        is_featured: false
+    })
+    const [voiceFile, setVoiceFile] = useState(null)
+    const [imageFile, setImageFile] = useState(null)
+    const audioRef = useRef(null)
+
+    useEffect(() => {
+        loadData()
+    }, [])
+
+    const loadData = async () => {
+        try {
+            const [menuRes, categoriesRes, statsRes, faqsRes] = await Promise.all([
+                menuApi.getAll({ available: 'all' }),
+                categoriesApi.getAll(),
+                statsApi.get(),
+                faqApi.getAll()
+            ])
+            setMenuItems(menuRes.data.data || [])
+            setCategories(categoriesRes.data.data || [])
+            setStats(statsRes.data.data || {})
+            setFaqs(faqsRes.data.data || [])
+        } catch (error) {
+            console.error('Error loading data:', error)
+            showToast('Failed to load data', 'error')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleLogout = async () => {
+        try {
+            await authApi.logout()
+        } catch (error) {
+            console.error('Logout error:', error)
+        } finally {
+            // Clear local storage regardless of API response
+            localStorage.removeItem('authToken')
+            localStorage.removeItem('isAuthenticated')
+            navigate('/login')
+        }
+    }
+
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type })
+        setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000)
+    }
+
+    const openModal = (item = null) => {
+        if (item) {
+            setEditingItem(item)
+            setFormData({
+                name: item.name,
+                category_id: item.category_id,
+                price: item.price,
+                price_display: item.price_display || '',
+                description: item.description,
+                voice_description: item.voice_description || '',
+                image_url: item.image_url || '',
+                tag: item.tag || '',
+                is_featured: item.is_featured
+            })
+        } else {
+            setEditingItem(null)
+            setFormData({
+                name: '',
+                category_id: categories[0]?.id || '',
+                price: '',
+                price_display: '',
+                description: '',
+                voice_description: '',
+                image_url: '',
+                tag: '',
+                is_featured: false
+            })
+        }
+        setVoiceFile(null)
+        setImageFile(null)
+        setShowModal(true)
+    }
+
+    const closeModal = () => {
+        setShowModal(false)
+        setEditingItem(null)
+        setVoiceFile(null)
+        setImageFile(null)
+    }
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+
+        try {
+            const data = new FormData()
+            Object.keys(formData).forEach(key => {
+                if (formData[key] !== '' && formData[key] !== null) {
+                    data.append(key, formData[key])
+                }
+            })
+
+            if (voiceFile) {
+                data.append('voice_file', voiceFile)
+            }
+            if (imageFile) {
+                data.append('image_file', imageFile)
+            }
+
+            if (editingItem) {
+                await menuApi.update(editingItem.id, data)
+                showToast('Menu item updated successfully')
+            } else {
+                await menuApi.create(data)
+                showToast('Menu item created successfully')
+            }
+
+            closeModal()
+            loadData()
+        } catch (error) {
+            console.error('Error saving menu item:', error)
+            showToast('Failed to save menu item', 'error')
+        }
+    }
+
+    const handleDelete = async (id) => {
+        if (!confirm('Are you sure you want to delete this item?')) return
+
+        try {
+            await menuApi.delete(id)
+            showToast('Menu item deleted')
+            loadData()
+        } catch (error) {
+            console.error('Error deleting item:', error)
+            showToast('Failed to delete item', 'error')
+        }
+    }
+
+    const previewVoice = () => {
+        if (voiceFile) {
+            const url = URL.createObjectURL(voiceFile)
+            if (audioRef.current) {
+                audioRef.current.src = url
+                audioRef.current.play()
+            }
+        } else if (editingItem?.voice_file) {
+            const url = getFileUrl(editingItem.voice_file)
+            if (audioRef.current) {
+                audioRef.current.src = url
+                audioRef.current.play()
+            }
+        } else if (formData.voice_description) {
+            const synth = window.speechSynthesis
+            synth.cancel()
+            const utterance = new SpeechSynthesisUtterance(formData.voice_description)
+            utterance.rate = 0.9
+            synth.speak(utterance)
+        }
+    }
+
+    const stopVoice = () => {
+        if (audioRef.current) {
+            audioRef.current.pause()
+            audioRef.current.currentTime = 0
+        }
+        window.speechSynthesis.cancel()
+    }
+
+    const filteredItems = menuItems.filter(item => {
+        const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.category_name?.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesFeatured = featuredFilter === 'all' ||
+            (featuredFilter === 'featured' && item.is_featured) ||
+            (featuredFilter === 'not_featured' && !item.is_featured)
+        const matchesCategory = categoryFilter === 'all' ||
+            item.category_id === parseInt(categoryFilter)
+        return matchesSearch && matchesFeatured && matchesCategory
+    })
+
+    // Category management
+    const [newCategory, setNewCategory] = useState('')
+
+    // FAQ management
+    const [faqs, setFaqs] = useState([])
+    const [showFaqModal, setShowFaqModal] = useState(false)
+    const [editingFaq, setEditingFaq] = useState(null)
+    const [faqFormData, setFaqFormData] = useState({ question: '', answer: '' })
+
+    const addCategory = async () => {
+        if (!newCategory.trim()) return
+        try {
+            await categoriesApi.create({ name: newCategory })
+            setNewCategory('')
+            loadData()
+            showToast('Category added')
+        } catch (error) {
+            showToast('Failed to add category', 'error')
+        }
+    }
+
+    const deleteCategory = async (id) => {
+        if (!confirm('Delete this category?')) return
+        try {
+            await categoriesApi.delete(id)
+            loadData()
+            showToast('Category deleted')
+        } catch (error) {
+            showToast('Cannot delete category with items', 'error')
+        }
+    }
+
+    // FAQ functions
+    const openFaqModal = (faq = null) => {
+        if (faq) {
+            setEditingFaq(faq)
+            setFaqFormData({ question: faq.question, answer: faq.answer })
+        } else {
+            setEditingFaq(null)
+            setFaqFormData({ question: '', answer: '' })
+        }
+        setShowFaqModal(true)
+    }
+
+    const closeFaqModal = () => {
+        setShowFaqModal(false)
+        setEditingFaq(null)
+        setFaqFormData({ question: '', answer: '' })
+    }
+
+    const handleFaqSubmit = async (e) => {
+        e.preventDefault()
+        try {
+            if (editingFaq) {
+                await faqApi.update(editingFaq.id, faqFormData)
+                showToast('FAQ updated successfully')
+            } else {
+                await faqApi.create(faqFormData)
+                showToast('FAQ created successfully')
+            }
+            closeFaqModal()
+            loadData()
+        } catch (error) {
+            console.error('Error saving FAQ:', error)
+            showToast('Failed to save FAQ', 'error')
+        }
+    }
+
+    const deleteFaq = async (id) => {
+        if (!confirm('Delete this FAQ?')) return
+        try {
+            await faqApi.delete(id)
+            loadData()
+            showToast('FAQ deleted')
+        } catch (error) {
+            showToast('Failed to delete FAQ', 'error')
+        }
+    }
+
+    return (
+        <div className="admin-page">
+            <audio ref={audioRef} />
+
+            {/* Sidebar */}
+            <aside className="sidebar">
+                <div className="sidebar-logo">Zelan Bakery</div>
+                <div className="sidebar-subtitle">Admin Panel</div>
+
+                <nav className="sidebar-nav">
+                    <a href="#" className="active">
+                        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9,22 9,12 15,12 15,22" /></svg>
+                        Dashboard
+                    </a>
+                </nav>
+
+                <div className="sidebar-footer">
+                    <Link to="/" target="_blank">
+                        <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15,3 21,3 21,9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+                        View Website
+                    </Link>
+                    <button onClick={handleLogout} className="logout-btn">
+                        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                        Logout
+                    </button>
+                </div>
+            </aside>
+
+
+            {/* Main Content */}
+            <main className="main-content">
+                <div className="page-header">
+                    <div>
+                        <h1 className="page-title">Menu Management</h1>
+                        <p className="page-subtitle">Manage menu items with voice descriptions (MP3)</p>
+                    </div>
+                    <button className="btn btn-primary" onClick={() => openModal()}>
+                        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                        Add Menu Item
+                    </button>
+                </div>
+
+                {/* Stats */}
+                <div className="stats-grid">
+                    <div className="stat-card">
+                        <div className="stat-card-icon">
+                            <svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" /></svg>
+                        </div>
+                        <div className="stat-card-value">{stats.totalItems || 0}</div>
+                        <div className="stat-card-label">Total Items</div>
+                    </div>
+                    <div className="stat-card">
+                        <div className="stat-card-icon">
+                            <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></svg>
+                        </div>
+                        <div className="stat-card-value">{stats.totalCategories || 0}</div>
+                        <div className="stat-card-label">Categories</div>
+                    </div>
+                    <div className="stat-card">
+                        <div className="stat-card-icon">
+                            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+                        </div>
+                        <div className="stat-card-value">{stats.featuredItems || 0}</div>
+                        <div className="stat-card-label">Featured</div>
+                    </div>
+                    <div className="stat-card">
+                        <div className="stat-card-icon">
+                            <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /></svg>
+                        </div>
+                        <div className="stat-card-value">{stats.voiceEnabled || 0}</div>
+                        <div className="stat-card-label">With Voice</div>
+                    </div>
+                </div>
+
+                {/* Categories */}
+                <div className="categories-section">
+                    <div className="categories-header">
+                        <h3>Categories</h3>
+                    </div>
+                    <div className="categories-list">
+                        {categories.map(cat => (
+                            <div key={cat.id} className="category-tag">
+                                {cat.name}
+                                <button className="category-remove" onClick={() => deleteCategory(cat.id)}>
+                                    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="add-category-form">
+                        <input
+                            type="text"
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                            placeholder="New category name..."
+                            onKeyPress={(e) => e.key === 'Enter' && addCategory()}
+                        />
+                        <button className="btn btn-primary btn-sm" onClick={addCategory}>Add</button>
+                    </div>
+                </div>
+
+                {/* FAQ Section */}
+                <div className="faq-admin-section">
+                    <div className="faq-admin-header">
+                        <h3>FAQ Management</h3>
+                        <button className="btn btn-primary btn-sm" onClick={() => openFaqModal()}>
+                            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                            Add FAQ
+                        </button>
+                    </div>
+                    <div className="faq-admin-list">
+                        {faqs.length === 0 ? (
+                            <p className="faq-empty">No FAQs yet. Add your first FAQ!</p>
+                        ) : (
+                            faqs.map(faq => (
+                                <div key={faq.id} className="faq-admin-item">
+                                    <div className="faq-admin-content">
+                                        <h4>{faq.question}</h4>
+                                        <p>{faq.answer}</p>
+                                    </div>
+                                    <div className="faq-admin-actions">
+                                        <button className="action-btn edit" onClick={() => openFaqModal(faq)}>
+                                            <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                                        </button>
+                                        <button className="action-btn delete" onClick={() => deleteFaq(faq.id)}>
+                                            <svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
+                {/* Menu Items Table */}
+                <div className="table-container">
+                    <div className="table-header">
+                        <h3 className="table-title">Menu Items</h3>
+                        <div className="table-filters">
+                            <div className="filter-group">
+                                <select
+                                    className="filter-select"
+                                    value={categoryFilter}
+                                    onChange={(e) => setCategoryFilter(e.target.value)}
+                                >
+                                    <option value="all">All Categories</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="filter-buttons">
+                                <button
+                                    className={`filter-btn ${featuredFilter === 'all' ? 'active' : ''}`}
+                                    onClick={() => setFeaturedFilter('all')}
+                                >
+                                    All
+                                </button>
+                                <button
+                                    className={`filter-btn ${featuredFilter === 'featured' ? 'active' : ''}`}
+                                    onClick={() => setFeaturedFilter('featured')}
+                                >
+                                    <svg viewBox="0 0 24 24" width="14" height="14"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+                                    Featured
+                                </button>
+                                <button
+                                    className={`filter-btn ${featuredFilter === 'not_featured' ? 'active' : ''}`}
+                                    onClick={() => setFeaturedFilter('not_featured')}
+                                >
+                                    Not Featured
+                                </button>
+                            </div>
+                            <div className="search-box">
+                                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                                <input
+                                    type="text"
+                                    placeholder="Search..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {loading ? (
+                        <div className="loading"><div className="loading-spinner"></div></div>
+                    ) : filteredItems.length === 0 ? (
+                        <div className="empty-state">
+                            <svg viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                            <p>No menu items yet</p>
+                            <button className="btn btn-primary" onClick={() => openModal()}>Add First Item</button>
+                        </div>
+                    ) : (
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Featured</th>
+                                    <th>Voice</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredItems.map(item => (
+                                    <tr key={item.id}>
+                                        <td>
+                                            <div className="menu-item-cell">
+                                                <img
+                                                    src={item.image_url?.startsWith('http') ? item.image_url : getFileUrl(item.image_url) || 'https://via.placeholder.com/60'}
+                                                    alt={item.name}
+                                                    className="menu-item-image"
+                                                />
+                                                <div>
+                                                    <h4>{item.name}</h4>
+                                                    <span>{item.tag || ''}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><span className="category-badge">{item.category_name}</span></td>
+                                        <td className="price-cell">{item.price_display || `${(item.price / 1000).toFixed(0)}K`}</td>
+                                        <td>
+                                            {item.is_featured ? (
+                                                <span className="featured-badge">
+                                                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                                    </svg>
+                                                </span>
+                                            ) : (
+                                                <span className="not-featured-badge">-</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {item.voice_file ? (
+                                                <span className="voice-badge has-voice">MP3</span>
+                                            ) : item.voice_description ? (
+                                                <span className="voice-badge has-text">Text</span>
+                                            ) : (
+                                                <span className="voice-badge no-voice">None</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <div className="action-buttons">
+                                                <button className="action-btn preview" onClick={() => {
+                                                    if (item.voice_file) {
+                                                        audioRef.current.src = getFileUrl(item.voice_file)
+                                                        audioRef.current.play()
+                                                    } else if (item.voice_description) {
+                                                        const synth = window.speechSynthesis
+                                                        synth.cancel()
+                                                        synth.speak(new SpeechSynthesisUtterance(item.voice_description))
+                                                    }
+                                                }}>
+                                                    <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                                                </button>
+                                                <button className="action-btn edit" onClick={() => openModal(item)}>
+                                                    <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                                                </button>
+                                                <button className="action-btn delete" onClick={() => handleDelete(item.id)}>
+                                                    <svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+            </main>
+
+            {/* Modal */}
+            {showModal && (
+                <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeModal()}>
+                    <div className="modal">
+                        <div className="modal-header">
+                            <h3>{editingItem ? 'Edit Menu Item' : 'Add Menu Item'}</h3>
+                            <button className="modal-close" onClick={closeModal}>
+                                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                            </button>
+                        </div>
+                        <form onSubmit={handleSubmit}>
+                            <div className="modal-body">
+                                <div className="form-group">
+                                    <label>Item Name *</label>
+                                    <input
+                                        type="text"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        required
+                                        placeholder="e.g., Nasi Goreng Special"
+                                    />
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Category *</label>
+                                        <select
+                                            value={formData.category_id}
+                                            onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                                            required
+                                        >
+                                            {categories.map(cat => (
+                                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Price (IDR) *</label>
+                                        <input
+                                            type="number"
+                                            value={formData.price}
+                                            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                                            required
+                                            placeholder="55000"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Display Price</label>
+                                        <input
+                                            type="text"
+                                            value={formData.price_display}
+                                            onChange={(e) => setFormData({ ...formData, price_display: e.target.value })}
+                                            placeholder="55K"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Tag</label>
+                                        <input
+                                            type="text"
+                                            value={formData.tag}
+                                            onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
+                                            placeholder="Best Seller"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Description *</label>
+                                    <textarea
+                                        value={formData.description}
+                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                        required
+                                        placeholder="Short description for the menu card..."
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>🎤 Voice File (MP3) - Your recorded voice</label>
+                                    <input
+                                        type="file"
+                                        accept="audio/*"
+                                        onChange={(e) => setVoiceFile(e.target.files[0])}
+                                    />
+                                    {(voiceFile || editingItem?.voice_file) && (
+                                        <div className="voice-preview">
+                                            <button type="button" className="btn btn-sm" onClick={previewVoice}>
+                                                <svg viewBox="0 0 24 24" width="14" height="14"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                                                Play
+                                            </button>
+                                            <button type="button" className="btn btn-sm" onClick={stopVoice}>
+                                                <svg viewBox="0 0 24 24" width="14" height="14"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
+                                                Stop
+                                            </button>
+                                            {editingItem?.voice_file && <span>Current: {editingItem.voice_file.split('/').pop()}</span>}
+                                        </div>
+                                    )}
+                                    <p className="form-hint">Upload your own voice recording (MP3, WAV, OGG)</p>
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Voice Description (Text fallback)</label>
+                                    <textarea
+                                        value={formData.voice_description}
+                                        onChange={(e) => setFormData({ ...formData, voice_description: e.target.value })}
+                                        placeholder="Fallback text-to-speech if no MP3 uploaded..."
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Image</label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => setImageFile(e.target.files[0])}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={formData.image_url}
+                                        onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                                        placeholder="Or paste image URL..."
+                                        style={{ marginTop: '0.5rem' }}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.is_featured}
+                                            onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })}
+                                        />
+                                        <svg viewBox="0 0 24 24" width="16" height="16"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+                                        Featured Item
+                                    </label>
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={closeModal}>Cancel</button>
+                                <button type="submit" className="btn btn-primary">Save Item</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* FAQ Modal */}
+            {showFaqModal && (
+                <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeFaqModal()}>
+                    <div className="modal modal-sm">
+                        <div className="modal-header">
+                            <h3>{editingFaq ? 'Edit FAQ' : 'Add FAQ'}</h3>
+                            <button className="modal-close" onClick={closeFaqModal}>
+                                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                            </button>
+                        </div>
+                        <form onSubmit={handleFaqSubmit}>
+                            <div className="modal-body">
+                                <div className="form-group">
+                                    <label>Question *</label>
+                                    <input
+                                        type="text"
+                                        value={faqFormData.question}
+                                        onChange={(e) => setFaqFormData({ ...faqFormData, question: e.target.value })}
+                                        required
+                                        placeholder="e.g., Bagaimana cara memesan?"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Answer *</label>
+                                    <textarea
+                                        value={faqFormData.answer}
+                                        onChange={(e) => setFaqFormData({ ...faqFormData, answer: e.target.value })}
+                                        required
+                                        placeholder="Write the answer here..."
+                                        rows={4}
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={closeFaqModal}>Cancel</button>
+                                <button type="submit" className="btn btn-primary">Save FAQ</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Toast */}
+            <div className={`toast ${toast.show ? 'show' : ''} ${toast.type}`}>
+                <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22,4 12,14.01 9,11.01" /></svg>
+                {toast.message}
+            </div>
+        </div>
+    )
+}
+
+export default AdminPage

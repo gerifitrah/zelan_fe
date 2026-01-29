@@ -1,0 +1,229 @@
+.menu-card {
+    background: rgba(245, 237, 228, 0.05);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    cursor: pointer;
+    position: relative;
+    animation: fadeIn 0.5s ease both;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.menu-card:hover {
+    transform: translateY(-10px);
+    background: rgba(245, 237, 228, 0.1);
+}
+
+.menu-card-image {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+}
+
+.menu-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+}
+
+.menu-card:hover .menu-card-image img {
+    transform: scale(1.1);
+}
+
+.menu-card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(26, 22, 18, 0.8) 0%, transparent 60%);
+}
+
+.voice-indicator {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 45px;
+    height: 45px;
+    background: var(--terracotta);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s ease;
+}
+
+.menu-card:hover .voice-indicator {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.voice-indicator.speaking {
+    animation: voicePulse 1s infinite;
+}
+
+@keyframes voicePulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(199, 91, 57, 0.5);
+    }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 15px rgba(199, 91, 57, 0);
+    }
+}
+
+.voice-indicator svg {
+    width: 20px;
+    height: 20px;
+    fill: var(--cream);
+}
+
+.menu-card-featured {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--gold) 0%, #f5c842 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+    animation: starPulse 2s infinite;
+}
+
+.menu-card-featured svg {
+    width: 18px;
+    height: 18px;
+    color: var(--warm-black);
+}
+
+@keyframes starPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+    }
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 4px 20px rgba(212, 175, 55, 0.6);
+    }
+}
+
+.menu-card-tag {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    background: var(--gold);
+    color: var(--warm-black);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.menu-card-content {
+    padding: 1.5rem;
+}
+
+.menu-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.8rem;
+}
+
+.menu-card-content h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: var(--cream);
+}
+
+.menu-card-price {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--gold);
+}
+
+.menu-card-content p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    opacity: 0.7;
+    color: var(--cream);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .menu-card-image {
+        height: 200px;
+    }
+
+    .menu-card-content {
+        padding: 1.2rem;
+    }
+
+    .menu-card-content h3 {
+        font-size: 1.2rem;
+    }
+
+    .menu-card-price {
+        font-size: 1.1rem;
+    }
+
+    .menu-card-content p {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .menu-card-image {
+        height: 180px;
+    }
+
+    .menu-card-content {
+        padding: 1rem;
+    }
+
+    .menu-card-content h3 {
+        font-size: 1.1rem;
+    }
+
+    .menu-card-price {
+        font-size: 1rem;
+    }
+
+    .voice-indicator {
+        width: 40px;
+        height: 40px;
+        top: 0.8rem;
+        right: 0.8rem;
+    }
+
+    .voice-indicator svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .menu-card-tag {
+        font-size: 0.65rem;
+        padding: 0.35rem 0.7rem;
+    }
+}
