@@ -3,9 +3,23 @@ import { getFileUrl } from '../services/api'
 import './MenuCard.css'
 
 function MenuCard({ item }) {
-    const imageUrl = item.image_url
-        ? (item.image_url.startsWith('http') ? item.image_url : getFileUrl(item.image_url))
-        : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=350&fit=crop'
+    // Get main image from images array, fallback to image_url for backward compatibility
+    const getMainImage = () => {
+        if (item.images && item.images.length > 0) {
+            const mainImage = item.images.find(img => img.is_main) || item.images[0]
+            return mainImage.image_url.startsWith('http')
+                ? mainImage.image_url
+                : getFileUrl(mainImage.image_url)
+        }
+        if (item.image_url) {
+            return item.image_url.startsWith('http')
+                ? item.image_url
+                : getFileUrl(item.image_url)
+        }
+        return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=350&fit=crop'
+    }
+
+    const imageUrl = getMainImage()
 
     return (
         <Link to={`/menu/${item.id}`} className="menu-card">

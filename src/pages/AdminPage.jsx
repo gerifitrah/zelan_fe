@@ -28,7 +28,9 @@ function AdminPage() {
         is_featured: false
     })
     const [voiceFile, setVoiceFile] = useState(null)
-    const [imageFile, setImageFile] = useState(null)
+    const [itemImages, setItemImages] = useState([])
+    const [newItemImageFiles, setNewItemImageFiles] = useState([]) // For new items - stores files before creation
+    const [uploadingImage, setUploadingImage] = useState(false)
     const audioRef = useRef(null)
 
     useEffect(() => {
@@ -73,20 +75,30 @@ function AdminPage() {
         setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000)
     }
 
-    const openModal = (item = null) => {
+    const openModal = async (item = null) => {
         if (item) {
-            setEditingItem(item)
-            setFormData({
-                name: item.name,
-                category_id: item.category_id,
-                price: item.price,
-                price_display: item.price_display || '',
-                description: item.description,
-                voice_description: item.voice_description || '',
-                image_url: item.image_url || '',
-                tag: item.tag || '',
-                is_featured: item.is_featured
-            })
+            // Fetch full item data including images
+            try {
+                const response = await menuApi.getById(item.id)
+                const fullItem = response.data.data
+                setEditingItem(fullItem)
+                setFormData({
+                    name: fullItem.name,
+                    category_id: fullItem.category_id,
+                    price: fullItem.price,
+                    price_display: fullItem.price_display || '',
+                    description: fullItem.description,
+                    voice_description: fullItem.voice_description || '',
+                    image_url: fullItem.image_url || '',
+                    tag: fullItem.tag || '',
+                    is_featured: fullItem.is_featured
+                })
+                setItemImages(fullItem.images || [])
+            } catch (error) {
+                console.error('Error loading item details:', error)
+                showToast('Failed to load item details', 'error')
+                return
+            }
         } else {
             setEditingItem(null)
             setFormData({
@@ -100,9 +112,10 @@ function AdminPage() {
                 tag: '',
                 is_featured: false
             })
+            setItemImages([])
+            setNewItemImageFiles([])
         }
         setVoiceFile(null)
-        setImageFile(null)
         setShowModal(true)
     }
 
@@ -110,7 +123,96 @@ function AdminPage() {
         setShowModal(false)
         setEditingItem(null)
         setVoiceFile(null)
-        setImageFile(null)
+        setItemImages([])
+        setNewItemImageFiles([])
+    }
+
+    // Image management functions
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0]
+        if (!file || !editingItem) return
+
+        if (itemImages.length >= 4) {
+            showToast('Maximum 4 images allowed', 'error')
+            return
+        }
+
+        setUploadingImage(true)
+        try {
+            const formData = new FormData()
+            formData.append('image', file)
+            await menuApi.uploadImage(editingItem.id, formData)
+            showToast('Image uploaded')
+            // Reload the item to get updated images
+            const response = await menuApi.getById(editingItem.id)
+            setItemImages(response.data.data.images || [])
+            setEditingItem(response.data.data)
+            loadData()
+        } catch (error) {
+            console.error('Error uploading image:', error)
+            showToast('Failed to upload image', 'error')
+        } finally {
+            setUploadingImage(false)
+            e.target.value = ''
+        }
+    }
+
+    const handleDeleteImage = async (imageId) => {
+        if (!editingItem) return
+        if (!confirm('Delete this image?')) return
+
+        try {
+            await menuApi.deleteImage(editingItem.id, imageId)
+            showToast('Image deleted')
+            const response = await menuApi.getById(editingItem.id)
+            setItemImages(response.data.data.images || [])
+            setEditingItem(response.data.data)
+            loadData()
+        } catch (error) {
+            console.error('Error deleting image:', error)
+            showToast('Failed to delete image', 'error')
+        }
+    }
+
+    const handleSetMainImage = async (imageId) => {
+        if (!editingItem) return
+
+        try {
+            await menuApi.setMainImage(editingItem.id, imageId)
+            showToast('Main image updated')
+            const response = await menuApi.getById(editingItem.id)
+            setItemImages(response.data.data.images || [])
+            setEditingItem(response.data.data)
+            loadData()
+        } catch (error) {
+            console.error('Error setting main image:', error)
+            showToast('Failed to set main image', 'error')
+        }
+    }
+
+    // Handle adding images for NEW items (before creation)
+    const handleNewItemImageAdd = (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+
+        if (newItemImageFiles.length >= 4) {
+            showToast('Maximum 4 images allowed', 'error')
+            return
+        }
+
+        // Create a preview URL and store the file
+        const preview = URL.createObjectURL(file)
+        setNewItemImageFiles(prev => [...prev, { file, preview, id: Date.now() }])
+        e.target.value = ''
+    }
+
+    // Remove a temporarily added image for new items
+    const handleNewItemImageRemove = (id) => {
+        setNewItemImageFiles(prev => {
+            const item = prev.find(img => img.id === id)
+            if (item) URL.revokeObjectURL(item.preview)
+            return prev.filter(img => img.id !== id)
+        })
     }
 
     const handleSubmit = async (e) => {
@@ -119,6 +221,8 @@ function AdminPage() {
         try {
             const data = new FormData()
             Object.keys(formData).forEach(key => {
+                // Skip image_url - images are managed separately via Images section
+                if (key === 'image_url') return
                 if (formData[key] !== '' && formData[key] !== null) {
                     data.append(key, formData[key])
                 }
@@ -127,20 +231,31 @@ function AdminPage() {
             if (voiceFile) {
                 data.append('voice_file', voiceFile)
             }
-            if (imageFile) {
-                data.append('image_file', imageFile)
-            }
 
             if (editingItem) {
                 await menuApi.update(editingItem.id, data)
                 showToast('Menu item updated successfully')
+                closeModal()
+                loadData()
             } else {
-                await menuApi.create(data)
-                showToast('Menu item created successfully')
-            }
+                // Create the item first
+                const response = await menuApi.create(data)
+                const newItem = response.data.data
 
-            closeModal()
-            loadData()
+                // Upload all temporary images for the new item
+                if (newItem && newItem.id && newItemImageFiles.length > 0) {
+                    for (const img of newItemImageFiles) {
+                        const imgFormData = new FormData()
+                        imgFormData.append('image', img.file)
+                        await menuApi.uploadImage(newItem.id, imgFormData)
+                        URL.revokeObjectURL(img.preview) // Clean up preview URL
+                    }
+                }
+
+                showToast('Menu item created successfully')
+                closeModal()
+                loadData()
+            }
         } catch (error) {
             console.error('Error saving menu item:', error)
             showToast('Failed to save menu item', 'error')
@@ -663,20 +778,82 @@ function AdminPage() {
                                     />
                                 </div>
 
-                                <div className="form-group">
-                                    <label>Image</label>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => setImageFile(e.target.files[0])}
-                                    />
-                                    <input
-                                        type="text"
-                                        value={formData.image_url}
-                                        onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                                        placeholder="Or paste image URL..."
-                                        style={{ marginTop: '0.5rem' }}
-                                    />
+                                {/* Image Management Section */}
+                                <div className="form-group images-section">
+                                    <label>Images ({editingItem ? itemImages.length : newItemImageFiles.length}/4)</label>
+
+                                    <div className="images-grid">
+                                        {/* For editing: show existing images */}
+                                        {editingItem && itemImages.map((img) => (
+                                            <div key={img.id} className={`image-item ${img.is_main ? 'is-main' : ''}`}>
+                                                <img
+                                                    src={img.image_url?.startsWith('http') ? img.image_url : getFileUrl(img.image_url)}
+                                                    alt="Menu"
+                                                />
+                                                {img.is_main && <span className="main-badge">Main</span>}
+                                                <div className="image-actions">
+                                                    {!img.is_main && (
+                                                        <button
+                                                            type="button"
+                                                            className="img-action-btn set-main"
+                                                            onClick={() => handleSetMainImage(img.id)}
+                                                            title="Set as main"
+                                                        >
+                                                            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        className="img-action-btn delete"
+                                                        onClick={() => handleDeleteImage(img.id)}
+                                                        title="Delete"
+                                                    >
+                                                        <svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {/* For new items: show temporary images */}
+                                        {!editingItem && newItemImageFiles.map((img, index) => (
+                                            <div key={img.id} className={`image-item ${index === 0 ? 'is-main' : ''}`}>
+                                                <img src={img.preview} alt="Preview" />
+                                                {index === 0 && <span className="main-badge">Main</span>}
+                                                <div className="image-actions">
+                                                    <button
+                                                        type="button"
+                                                        className="img-action-btn delete"
+                                                        onClick={() => handleNewItemImageRemove(img.id)}
+                                                        title="Remove"
+                                                    >
+                                                        <svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {/* Add image button */}
+                                        {((editingItem && itemImages.length < 4) || (!editingItem && newItemImageFiles.length < 4)) && (
+                                            <label className="image-upload-btn">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={editingItem ? handleImageUpload : handleNewItemImageAdd}
+                                                    disabled={uploadingImage}
+                                                    style={{ display: 'none' }}
+                                                />
+                                                {uploadingImage ? (
+                                                    <div className="loading-spinner small"></div>
+                                                ) : (
+                                                    <>
+                                                        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                                        <span>Add Image</span>
+                                                    </>
+                                                )}
+                                            </label>
+                                        )}
+                                    </div>
+                                    <p className="form-hint">First image becomes main.{editingItem && ' Click ⭐ to change main image.'}</p>
                                 </div>
 
                                 <div className="form-group">

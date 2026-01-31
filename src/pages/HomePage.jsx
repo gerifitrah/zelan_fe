@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { menuApi, categoriesApi, specialsApi, faqApi } from '../services/api'
+import { menuApi, categoriesApi, specialsApi, faqApi, getFileUrl } from '../services/api'
 import MenuCard from '../components/MenuCard'
 import './HomePage.css'
 
@@ -13,11 +13,25 @@ function HomePage() {
     const [selectedCategory, setSelectedCategory] = useState('all')
     const [loading, setLoading] = useState(true)
     const [currentPage, setCurrentPage] = useState(0)
-    const itemsPerPage = 8
+    const itemsPerPage = 6
+    const [galleryPage, setGalleryPage] = useState(0)
+    const galleryPerPage = 9 // 3x3 grid
+    const [fullscreenImage, setFullscreenImage] = useState(null)
 
     useEffect(() => {
         loadData()
     }, [])
+
+    // Close fullscreen on ESC key
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape' && fullscreenImage !== null) {
+                setFullscreenImage(null)
+            }
+        }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [fullscreenImage])
 
     const loadData = async () => {
         try {
@@ -63,6 +77,78 @@ function HomePage() {
         }
     }
 
+    // Build gallery from menu item images (no duplicate storage needed)
+    const galleryFromMenu = menuItems
+        .flatMap(item => {
+            // If item has multiple images, use those
+            if (item.images && item.images.length > 0) {
+                return item.images.map(img => ({
+                    id: img.id,
+                    image_url: img.image_url,
+                    caption: item.name
+                }))
+            }
+            // Otherwise use single image_url if available
+            if (item.image_url) {
+                return [{
+                    id: item.id,
+                    image_url: item.image_url,
+                    caption: item.name
+                }]
+            }
+            return []
+        })
+        .slice(0, 12) // Limit to 12 images
+
+    // Default gallery images if no menu images
+    const defaultGalleryImages = [
+        { id: 1, image_url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&h=600&fit=crop', caption: 'Fresh Bread' },
+        { id: 2, image_url: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=800&h=600&fit=crop', caption: 'Pastries' },
+        { id: 3, image_url: 'https://images.unsplash.com/photo-1486427944299-d1955d23e34d?w=800&h=600&fit=crop', caption: 'Cakes' },
+        { id: 4, image_url: 'https://images.unsplash.com/photo-1517433670267-08bbd4be890f?w=800&h=600&fit=crop', caption: 'Cupcakes' },
+        { id: 5, image_url: 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=800&h=600&fit=crop', caption: 'Birthday Cake' },
+        { id: 6, image_url: 'https://images.unsplash.com/photo-1495147466023-ac5c588e2e94?w=800&h=600&fit=crop', caption: 'Bakery' }
+    ]
+
+    const displayGalleryImages = galleryFromMenu.length > 0 ? galleryFromMenu : defaultGalleryImages
+
+    // Gallery pagination
+    const totalGalleryPages = Math.ceil(displayGalleryImages.length / galleryPerPage)
+    const paginatedGalleryImages = displayGalleryImages.slice(
+        galleryPage * galleryPerPage,
+        (galleryPage + 1) * galleryPerPage
+    )
+
+    const nextGalleryPage = () => {
+        if (galleryPage < totalGalleryPages - 1) {
+            setGalleryPage(galleryPage + 1)
+        }
+    }
+
+    const prevGalleryPage = () => {
+        if (galleryPage > 0) {
+            setGalleryPage(galleryPage - 1)
+        }
+    }
+
+    const openFullscreen = (index) => {
+        // Calculate actual index in displayGalleryImages
+        const actualIndex = galleryPage * galleryPerPage + index
+        setFullscreenImage(actualIndex)
+    }
+
+    const nextFullscreenImage = () => {
+        if (fullscreenImage < displayGalleryImages.length - 1) {
+            setFullscreenImage(fullscreenImage + 1)
+        }
+    }
+
+    const prevFullscreenImage = () => {
+        if (fullscreenImage > 0) {
+            setFullscreenImage(fullscreenImage - 1)
+        }
+    }
+
     return (
         <div className="home-page">
             {/* Top Bar */}
@@ -104,6 +190,8 @@ function HomePage() {
                     {/* <li><a href="#specials" onClick={() => setSelectedCategory('all')}>Promo</a></li> */}
                     <li><a href="#about" onClick={() => setSelectedCategory('all')}>About</a></li>
                     <li><a href="#faq" onClick={() => setSelectedCategory('all')}>FAQ</a></li>
+                    <li><a href="#gallery" onClick={() => setSelectedCategory('all')}>Gallery</a></li>
+                    <li><a href="#contact" onClick={() => setSelectedCategory('all')}>Contact</a></li>
                     <li><a href="https://wa.me/62895385455669" target="_blank" rel="noopener noreferrer" className="nav-cta">Order Now</a></li>
                 </ul>
                 <button
@@ -153,7 +241,7 @@ function HomePage() {
                 <div className="section-header">
                     <div className="section-badge">Menu Kami</div>
                     <h2>Produk Pilihan</h2>
-                    <p>Klik menu untuk melihat detail dan mendengar deskripsi. Semua dibuat fresh dengan bahan berkualitas.</p>
+                    <p>Klik menu untuk melihat detail dan mendengar deskripsi.</p>
                 </div>
 
                 {loading ? (
@@ -180,35 +268,47 @@ function HomePage() {
                             ))}
                         </div>
 
-                        <div className="menu-grid">
-                            {paginatedItems.map((item) => (
-                                <MenuCard key={item.id} item={item} />
-                            ))}
-                        </div>
-
-                        {totalPages > 1 && (
-                            <div className="menu-pagination">
+                        <div className="menu-grid-wrapper">
+                            {totalPages > 1 && (
                                 <button
-                                    className="pagination-btn"
+                                    className="pagination-arrow pagination-prev"
                                     onClick={prevPage}
                                     disabled={currentPage === 0}
                                 >
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                                        <path d="M15 18l-6-6 6-6" />
                                     </svg>
                                 </button>
-                                <span className="pagination-info">
-                                    {currentPage + 1} / {totalPages}
-                                </span>
+                            )}
+
+                            <div className="menu-grid">
+                                {paginatedItems.map((item) => (
+                                    <MenuCard key={item.id} item={item} />
+                                ))}
+                            </div>
+
+                            {totalPages > 1 && (
                                 <button
-                                    className="pagination-btn"
+                                    className="pagination-arrow pagination-next"
                                     onClick={nextPage}
                                     disabled={currentPage === totalPages - 1}
                                 >
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M5 12h14M12 5l7 7-7 7" />
+                                        <path d="M9 18l6-6-6-6" />
                                     </svg>
                                 </button>
+                            )}
+                        </div>
+
+                        {totalPages > 1 && (
+                            <div className="pagination-dots">
+                                {Array.from({ length: totalPages }, (_, i) => (
+                                    <button
+                                        key={i}
+                                        className={`pagination-dot ${i === currentPage ? 'active' : ''}`}
+                                        onClick={() => setCurrentPage(i)}
+                                    />
+                                ))}
                             </div>
                         )}
 
@@ -309,6 +409,96 @@ function HomePage() {
                 </div>
             </section>
 
+            {/* Gallery Section */}
+            <section className="gallery-section" id="gallery">
+                <div className="section-header">
+                    <div className="section-badge">Galeri</div>
+                    <h2>Momen Bersama Zelan</h2>
+                    <p>Lihat koleksi foto produk dan momen spesial kami</p>
+                </div>
+
+                {displayGalleryImages.length > 0 && (
+                    <>
+                        <div className="gallery-grid-wrapper">
+                            {totalGalleryPages > 1 && (
+                                <button
+                                    className="gallery-page-arrow gallery-page-prev"
+                                    onClick={prevGalleryPage}
+                                    disabled={galleryPage === 0}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M15 18l-6-6 6-6" />
+                                    </svg>
+                                </button>
+                            )}
+
+                            <div className="gallery-grid">
+                                {paginatedGalleryImages.map((img, index) => (
+                                    <div
+                                        key={img.id || index}
+                                        className="gallery-grid-item"
+                                        onClick={() => openFullscreen(index)}
+                                    >
+                                        <img
+                                            src={img.image_url?.startsWith('http') ? img.image_url : getFileUrl(img.image_url)}
+                                            alt={img.caption || `Gallery ${index + 1}`}
+                                        />
+                                        {img.caption && (
+                                            <div className="gallery-grid-caption">{img.caption}</div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {totalGalleryPages > 1 && (
+                                <button
+                                    className="gallery-page-arrow gallery-page-next"
+                                    onClick={nextGalleryPage}
+                                    disabled={galleryPage === totalGalleryPages - 1}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M9 18l6-6-6-6" />
+                                    </svg>
+                                </button>
+                            )}
+                        </div>
+
+                        {totalGalleryPages > 1 && (
+                            <div className="gallery-page-dots">
+                                {Array.from({ length: totalGalleryPages }, (_, i) => (
+                                    <button
+                                        key={i}
+                                        className={`gallery-page-dot ${i === galleryPage ? 'active' : ''}`}
+                                        onClick={() => setGalleryPage(i)}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </>
+                )}
+            </section>
+
+            {/* Maps Section */}
+            <section className="maps-section" id="maps">
+                <div className="section-header">
+                    <div className="section-badge">Lokasi</div>
+                    <h2>Temukan Kami</h2>
+                    <p>Jl. Bung Tomo VII No. 5, Pemecutan Kaja, Denpasar Utara, Bali</p>
+                </div>
+                <div className="maps-container">
+                    <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3569.5635178748003!2d115.19842127456789!3d-8.644277187911532!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd23f004cdebe17%3A0x9fa3468b803dc2a3!2sZelan%20bakery%20n%20cake!5e1!3m2!1sen!2sid!4v1769881031635!5m2!1sen!2sid"
+                        width="100%"
+                        height="450"
+                        style={{ border: 0 }}
+                        allowFullScreen=""
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title="Zelan Bakery Location"
+                    ></iframe>
+                </div>
+            </section>
+
             {/* Contact Section */}
             <section className="contact-section" id="contact">
                 <div className="contact-grid">
@@ -393,8 +583,8 @@ function HomePage() {
                     <div className="footer-links">
                         <a href="#home">Home</a>
                         <a href="#menu">Menu</a>
-                        {/* <a href="#specials">Promo</a> */}
                         <a href="#about">About</a>
+                        <a href="#gallery">Gallery</a>
                     </div>
                     <p className="footer-copy">© 2023 Zelan Bakery & Cake. All rights reserved.</p>
                 </div>
@@ -410,6 +600,51 @@ function HomePage() {
                 </svg>
                 Klik menu untuk dengar deskripsi
             </div> */}
+
+            {/* Fullscreen Gallery Modal */}
+            {fullscreenImage !== null && (
+                <div className="fullscreen-modal" onClick={() => setFullscreenImage(null)}>
+                    <button className="fullscreen-close" onClick={() => setFullscreenImage(null)}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <img
+                        src={displayGalleryImages[fullscreenImage]?.image_url?.startsWith('http')
+                            ? displayGalleryImages[fullscreenImage].image_url
+                            : getFileUrl(displayGalleryImages[fullscreenImage]?.image_url)}
+                        alt={displayGalleryImages[fullscreenImage]?.caption || 'Gallery'}
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                    {displayGalleryImages[fullscreenImage]?.caption && (
+                        <div className="fullscreen-caption">
+                            {displayGalleryImages[fullscreenImage].caption}
+                        </div>
+                    )}
+                    {displayGalleryImages.length > 1 && (
+                        <>
+                            <button
+                                className="fullscreen-nav fullscreen-prev"
+                                onClick={(e) => { e.stopPropagation(); prevFullscreenImage(); }}
+                                disabled={fullscreenImage === 0}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M15 18l-6-6 6-6" />
+                                </svg>
+                            </button>
+                            <button
+                                className="fullscreen-nav fullscreen-next"
+                                onClick={(e) => { e.stopPropagation(); nextFullscreenImage(); }}
+                                disabled={fullscreenImage === displayGalleryImages.length - 1}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M9 18l6-6-6-6" />
+                                </svg>
+                            </button>
+                        </>
+                    )}
+                </div>
+            )}
         </div>
 
     )

@@ -32,6 +32,9 @@
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid rgba(26, 26, 26, 0.08);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .back-link {
@@ -131,6 +134,112 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+/* Image Carousel */
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    z-index: 10;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.carousel-btn:hover {
+    background: #C41E3A;
+    color: white;
+}
+
+.carousel-btn:hover svg {
+    stroke: white;
+}
+
+.carousel-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: #1a1a1a;
+}
+
+.carousel-prev {
+    left: 1rem;
+}
+
+.carousel-next {
+    right: 1rem;
+}
+
+/* Image Section Wrapper */
+.menu-detail-image-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.carousel-thumbnails {
+    display: flex;
+    gap: 1rem;
+    padding: 0.5rem 0;
+}
+
+.thumbnail {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.3s ease;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.thumbnail:hover {
+    border-color: rgba(196, 30, 58, 0.5);
+    transform: translateY(-2px);
+}
+
+.thumbnail.active {
+    border-color: #C41E3A;
+}
+
+.thumbnail.is-main {
+    border-color: #D4AF37;
+}
+
+.thumbnail.is-main.active {
+    border-color: #C41E3A;
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.thumbnail .main-badge {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #D4AF37;
+    color: #1a1a1a;
+    font-size: 0.45rem;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+    text-transform: uppercase;
 }
 
 /* Info Section */
@@ -271,6 +380,115 @@
     }
 }
 
+/* Fullscreen Modal */
+.fullscreen-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fullscreen-modal img {
+    max-width: 90%;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 8px;
+    cursor: default;
+    animation: zoomIn 0.3s ease;
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.fullscreen-close {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.fullscreen-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.fullscreen-close svg {
+    width: 28px;
+    height: 28px;
+    stroke: white;
+}
+
+.fullscreen-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.fullscreen-nav:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.fullscreen-nav svg {
+    width: 28px;
+    height: 28px;
+    stroke: white;
+}
+
+.fullscreen-prev {
+    left: 2rem;
+}
+
+.fullscreen-next {
+    right: 2rem;
+}
+
+/* Make image clickable hint */
+.menu-detail-image {
+    cursor: pointer;
+}
+
+.menu-detail-image:hover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    pointer-events: none;
+}
+
 @media (max-width: 768px) {
     .detail-nav {
         padding: 1rem;
@@ -303,5 +521,68 @@
     .voice-btn {
         width: 100%;
         justify-content: center;
+    }
+
+    .carousel-btn {
+        width: 38px;
+        height: 38px;
+    }
+
+    .carousel-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .carousel-prev {
+        left: 0.5rem;
+    }
+
+    .carousel-next {
+        right: 0.5rem;
+    }
+
+    .carousel-thumbnails {
+        gap: 0.5rem;
+        justify-content: center;
+    }
+
+    .thumbnail {
+        width: 48px;
+        height: 48px;
+    }
+
+    .thumbnail .main-badge {
+        font-size: 0.4rem;
+        padding: 1px 3px;
+    }
+
+    .fullscreen-close {
+        top: 1rem;
+        right: 1rem;
+        width: 40px;
+        height: 40px;
+    }
+
+    .fullscreen-close svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .fullscreen-nav {
+        width: 45px;
+        height: 45px;
+    }
+
+    .fullscreen-nav svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .fullscreen-prev {
+        left: 0.5rem;
+    }
+
+    .fullscreen-next {
+        right: 0.5rem;
     }
 }

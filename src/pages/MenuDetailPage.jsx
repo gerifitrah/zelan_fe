@@ -8,6 +8,8 @@ function MenuDetailPage() {
     const [item, setItem] = useState(null)
     const [loading, setLoading] = useState(true)
     const [isPlaying, setIsPlaying] = useState(false)
+    const [currentImageIndex, setCurrentImageIndex] = useState(0)
+    const [isFullscreen, setIsFullscreen] = useState(false)
     const audioRef = useRef(null)
 
     useEffect(() => {
@@ -85,6 +87,17 @@ function MenuDetailPage() {
         }
     }, [])
 
+    // Close fullscreen on ESC key
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape' && isFullscreen) {
+                setIsFullscreen(false)
+            }
+        }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [isFullscreen])
+
     if (loading) {
         return (
             <div className="menu-detail-page">
@@ -106,9 +119,25 @@ function MenuDetailPage() {
         )
     }
 
-    const imageUrl = item.image_url
-        ? (item.image_url.startsWith('http') ? item.image_url : getFileUrl(item.image_url))
-        : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=350&fit=crop'
+    // Get images array or fallback to single image
+    const images = item.images && item.images.length > 0
+        ? item.images.map(img => ({
+            ...img,
+            url: img.image_url.startsWith('http') ? img.image_url : getFileUrl(img.image_url)
+        }))
+        : item.image_url
+            ? [{ url: item.image_url.startsWith('http') ? item.image_url : getFileUrl(item.image_url), is_main: true }]
+            : [{ url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=350&fit=crop', is_main: true }]
+
+    const currentImage = images[currentImageIndex]
+
+    const nextImage = () => {
+        setCurrentImageIndex((prev) => (prev + 1) % images.length)
+    }
+
+    const prevImage = () => {
+        setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
+    }
 
     return (
         <div className="menu-detail-page">
@@ -129,18 +158,53 @@ function MenuDetailPage() {
 
             {/* Menu Detail Content */}
             <div className="menu-detail-content">
-                <div className="menu-detail-image">
-                    <img src={imageUrl} alt={item.name} />
-                    {item.is_featured && (
-                        <div className="detail-featured-badge">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                            </svg>
-                            Favorit
+                <div className="menu-detail-image-section">
+                    <div className="menu-detail-image" onClick={() => setIsFullscreen(true)}>
+                        <img src={currentImage.url} alt={item.name} />
+
+                        {/* Carousel Navigation */}
+                        {images.length > 1 && (
+                            <>
+                                <button className="carousel-btn carousel-prev" onClick={prevImage}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M15 18l-6-6 6-6" />
+                                    </svg>
+                                </button>
+                                <button className="carousel-btn carousel-next" onClick={nextImage}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M9 18l6-6-6-6" />
+                                    </svg>
+                                </button>
+                            </>
+                        )}
+
+                        {item.is_featured && (
+                            <div className="detail-featured-badge">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                </svg>
+                                Favorit
+                            </div>
+                        )}
+                        {item.tag && (
+                            <div className="detail-tag">{item.tag}</div>
+                        )}
+                    </div>
+
+                    {/* Thumbnails - Below Image */}
+                    {images.length > 1 && (
+                        <div className="carousel-thumbnails">
+                            {images.map((img, index) => (
+                                <button
+                                    key={index}
+                                    className={`thumbnail ${index === currentImageIndex ? 'active' : ''} ${img.is_main ? 'is-main' : ''}`}
+                                    onClick={() => setCurrentImageIndex(index)}
+                                >
+                                    <img src={img.url} alt={`${item.name} ${index + 1}`} />
+                                    {img.is_main && <span className="main-badge">Main</span>}
+                                </button>
+                            ))}
                         </div>
-                    )}
-                    {item.tag && (
-                        <div className="detail-tag">{item.tag}</div>
                     )}
                 </div>
 
@@ -189,6 +253,42 @@ function MenuDetailPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Fullscreen Image Modal */}
+            {isFullscreen && (
+                <div className="fullscreen-modal" onClick={() => setIsFullscreen(false)}>
+                    <button className="fullscreen-close" onClick={() => setIsFullscreen(false)}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <img
+                        src={currentImage.url}
+                        alt={item.name}
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                    {images.length > 1 && (
+                        <>
+                            <button
+                                className="fullscreen-nav fullscreen-prev"
+                                onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M15 18l-6-6 6-6" />
+                                </svg>
+                            </button>
+                            <button
+                                className="fullscreen-nav fullscreen-next"
+                                onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M9 18l6-6-6-6" />
+                                </svg>
+                            </button>
+                        </>
+                    )}
+                </div>
+            )}
         </div>
     )
 }

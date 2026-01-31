@@ -45,20 +45,29 @@ export const menuApi = {
     getAll: (params = {}) => api.get('/menu', { params }),
     getByCategory: () => api.get('/menu/by-category'),
     getById: (id) => api.get(`/menu/${id}`),
-    
+
     create: (formData) => api.post('/menu', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
     }),
-    
+
     update: (id, formData) => api.put(`/menu/${id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
     }),
-    
+
     delete: (id) => api.delete(`/menu/${id}`),
-    
+
     uploadVoice: (id, formData) => api.post(`/menu/${id}/voice`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    }),
+
+    // Image management
+    uploadImage: (id, formData) => api.post(`/menu/${id}/images`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+
+    deleteImage: (menuId, imageId) => api.delete(`/menu/${menuId}/images/${imageId}`),
+
+    setMainImage: (menuId, imageId) => api.patch(`/menu/${menuId}/images/${imageId}/main`)
 };
 
 // Specials API
@@ -88,6 +97,19 @@ export const faqApi = {
     create: (data) => api.post('/faqs', data),
     update: (id, data) => api.put(`/faqs/${id}`, data),
     delete: (id) => api.delete(`/faqs/${id}`)
+};
+
+// Gallery API
+export const galleryApi = {
+    getAll: () => api.get('/gallery'),
+    getById: (id) => api.get(`/gallery/${id}`),
+    create: (formData) => api.post('/gallery', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+    update: (id, formData) => api.put(`/gallery/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+    delete: (id) => api.delete(`/gallery/${id}`)
 };
 
 export default api;
