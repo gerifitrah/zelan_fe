@@ -314,6 +314,52 @@
     gap: 2rem;
 }
 
+/* Menu Pagination */
+.menu-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 3rem;
+}
+
+.pagination-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 248, 240, 0.1);
+    border: 1px solid rgba(255, 248, 240, 0.2);
+    color: #FFF8F0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #C41E3A;
+    border-color: #C41E3A;
+    transform: scale(1.1);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.pagination-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.pagination-info {
+    font-size: 1rem;
+    color: rgba(255, 248, 240, 0.8);
+    min-width: 60px;
+    text-align: center;
+}
+
 .empty-menu {
     text-align: center;
     padding: 4rem;
@@ -936,6 +982,11 @@
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     }
 
+    .pagination-btn {
+        width: 45px;
+        height: 45px;
+    }
+
     .voice-hint {
         bottom: 1.5rem;
         right: 1.5rem;
@@ -1037,6 +1088,20 @@
     .menu-grid {
         grid-template-columns: 1fr;
         gap: 1.5rem;
+    }
+
+    .pagination-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .pagination-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .pagination-info {
+        font-size: 0.9rem;
     }
 
     .special-card {

@@ -1,4 +1,7 @@
 .menu-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
     background: rgba(245, 237, 228, 0.05);
     border-radius: 20px;
     overflow: hidden;
@@ -54,19 +57,18 @@
     right: 1rem;
     width: 45px;
     height: 45px;
-    background: var(--terracotta);
+    background: var(--terracotta, #C41E3A);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    transform: scale(0.8);
+    opacity: 0.85;
     transition: all 0.3s ease;
 }
 
 .menu-card:hover .voice-indicator {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1.1);
 }
 
 .voice-indicator.speaking {

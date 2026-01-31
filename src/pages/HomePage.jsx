@@ -12,6 +12,8 @@ function HomePage() {
     const [expandedFaq, setExpandedFaq] = useState(null)
     const [selectedCategory, setSelectedCategory] = useState('all')
     const [loading, setLoading] = useState(true)
+    const [currentPage, setCurrentPage] = useState(0)
+    const itemsPerPage = 8
 
     useEffect(() => {
         loadData()
@@ -37,9 +39,29 @@ function HomePage() {
     }
 
     const filteredItems = (selectedCategory === 'all'
-        ? menuItems
+        ? menuItems.filter(item => item.tag)
         : menuItems.filter(item => item.category_id === parseInt(selectedCategory))
     ).sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
+
+    const totalPages = Math.ceil(filteredItems.length / itemsPerPage)
+    const paginatedItems = filteredItems.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
+
+    const handleCategoryChange = (category) => {
+        setSelectedCategory(category)
+        setCurrentPage(0)
+    }
+
+    const nextPage = () => {
+        if (currentPage < totalPages - 1) {
+            setCurrentPage(currentPage + 1)
+        }
+    }
+
+    const prevPage = () => {
+        if (currentPage > 0) {
+            setCurrentPage(currentPage - 1)
+        }
+    }
 
     return (
         <div className="home-page">
@@ -131,7 +153,7 @@ function HomePage() {
                 <div className="section-header">
                     <div className="section-badge">Menu Kami</div>
                     <h2>Produk Pilihan</h2>
-                    <p>Hover untuk mendengar deskripsi produk. Semua dibuat fresh dengan bahan berkualitas.</p>
+                    <p>Klik menu untuk melihat detail dan mendengar deskripsi. Semua dibuat fresh dengan bahan berkualitas.</p>
                 </div>
 
                 {loading ? (
@@ -143,15 +165,15 @@ function HomePage() {
                         <div className="menu-categories">
                             <button
                                 className={`category-btn ${selectedCategory === 'all' ? 'active' : ''}`}
-                                onClick={() => setSelectedCategory('all')}
+                                onClick={() => handleCategoryChange('all')}
                             >
-                                Semua
+                                Favorit
                             </button>
                             {categories.map(cat => (
                                 <button
                                     key={cat.id}
                                     className={`category-btn ${selectedCategory === cat.id.toString() ? 'active' : ''}`}
-                                    onClick={() => setSelectedCategory(cat.id.toString())}
+                                    onClick={() => handleCategoryChange(cat.id.toString())}
                                 >
                                     {cat.name}
                                 </button>
@@ -159,10 +181,36 @@ function HomePage() {
                         </div>
 
                         <div className="menu-grid">
-                            {filteredItems.map((item) => (
+                            {paginatedItems.map((item) => (
                                 <MenuCard key={item.id} item={item} />
                             ))}
                         </div>
+
+                        {totalPages > 1 && (
+                            <div className="menu-pagination">
+                                <button
+                                    className="pagination-btn"
+                                    onClick={prevPage}
+                                    disabled={currentPage === 0}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                                    </svg>
+                                </button>
+                                <span className="pagination-info">
+                                    {currentPage + 1} / {totalPages}
+                                </span>
+                                <button
+                                    className="pagination-btn"
+                                    onClick={nextPage}
+                                    disabled={currentPage === totalPages - 1}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M5 12h14M12 5l7 7-7 7" />
+                                    </svg>
+                                </button>
+                            </div>
+                        )}
 
                         {filteredItems.length === 0 && (
                             <div className="empty-menu">
@@ -353,15 +401,15 @@ function HomePage() {
             </footer>
 
             {/* Voice Hint */}
-            <div className="voice-hint">
+            {/* <div className="voice-hint">
                 <svg viewBox="0 0 24 24">
                     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
                     <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                     <line x1="12" y1="19" x2="12" y2="23" />
                     <line x1="8" y1="23" x2="16" y2="23" />
                 </svg>
-                Hover menu untuk dengar deskripsi
-            </div>
+                Klik menu untuk dengar deskripsi
+            </div> */}
         </div>
 
     )
