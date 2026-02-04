@@ -149,45 +149,41 @@ function MenuDetailPage() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M19 12H5M12 19l-7-7 7-7" />
                     </svg>
-                    Kembali ke Menu
+                    <span>KEMBALI KE MENU</span>
                 </Link>
                 <Link to="/" className="logo">
-                    <img src="/logo-light.png" alt="Zelan Bakery" className="logo-img" />
+                    <span className="logo-text">Zelan.</span>
                 </Link>
             </nav>
 
             {/* Menu Detail Content */}
             <div className="menu-detail-content">
                 <div className="menu-detail-image-section">
-                    <div className="menu-detail-image" onClick={() => setIsFullscreen(true)}>
-                        <img src={currentImage.url} alt={item.name} />
+                    <div className="image-card">
+                        <div className="menu-detail-image" onClick={() => setIsFullscreen(true)}>
+                            <img src={currentImage.url} alt={item.name} />
 
-                        {/* Carousel Navigation */}
+                            {item.is_featured && (
+                                <div className="detail-featured-badge">
+                                    <span>+</span> FAVORIT
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Carousel Navigation - Inside card at bottom */}
                         {images.length > 1 && (
-                            <>
-                                <button className="carousel-btn carousel-prev" onClick={prevImage}>
+                            <div className="carousel-nav-container">
+                                <button className="carousel-btn carousel-prev" onClick={(e) => { e.stopPropagation(); prevImage(); }}>
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M15 18l-6-6 6-6" />
                                     </svg>
                                 </button>
-                                <button className="carousel-btn carousel-next" onClick={nextImage}>
+                                <button className="carousel-btn carousel-next" onClick={(e) => { e.stopPropagation(); nextImage(); }}>
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M9 18l6-6-6-6" />
                                     </svg>
                                 </button>
-                            </>
-                        )}
-
-                        {item.is_featured && (
-                            <div className="detail-featured-badge">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                                </svg>
-                                Favorit
                             </div>
-                        )}
-                        {item.tag && (
-                            <div className="detail-tag">{item.tag}</div>
                         )}
                     </div>
 
@@ -197,11 +193,10 @@ function MenuDetailPage() {
                             {images.map((img, index) => (
                                 <button
                                     key={index}
-                                    className={`thumbnail ${index === currentImageIndex ? 'active' : ''} ${img.is_main ? 'is-main' : ''}`}
+                                    className={`thumbnail ${index === currentImageIndex ? 'active' : ''}`}
                                     onClick={() => setCurrentImageIndex(index)}
                                 >
                                     <img src={img.url} alt={`${item.name} ${index + 1}`} />
-                                    {img.is_main && <span className="main-badge">Main</span>}
                                 </button>
                             ))}
                         </div>
@@ -209,33 +204,63 @@ function MenuDetailPage() {
                 </div>
 
                 <div className="menu-detail-info">
-                    <h1>{item.name}</h1>
-                    <div className="detail-price">
-                        {item.price_display || `Rp ${item.price?.toLocaleString('id-ID')}`}
+                    {/* Category Label */}
+                    <div className="category-label">
+                        <span>{item.category?.name?.toUpperCase() || 'KUE KERING PREMIUM'}</span>
+                        <div className="category-line"></div>
                     </div>
-                    {/* <p className="detail-description">{item.description}</p> */}
-                    <p className="detail-description">{item.voice_description}</p>
 
-                    {/* Voice Control */}
-                    {(item.voice_file || item.voice_description) && (
-                        <div className="voice-control">
-                            <button
-                                className={`voice-btn ${isPlaying ? 'playing' : ''}`}
-                                onClick={toggleVoice}
-                            >
+                    {/* Product Name */}
+                    <h1 className="product-name">{item.name}</h1>
+
+                    {/* Price */}
+                    <div className="detail-price">
+                        <span className="price-amount">{item.price_display || `Rp ${item.price?.toLocaleString('id-ID')}`}</span>
+                        {item.unit && <span className="price-unit">/ {item.unit}</span>}
+                    </div>
+
+                    {/* Divider */}
+                    <div className="price-divider"></div>
+
+                    {/* Description */}
+                    <p className="detail-description">
+                        <strong>{item.name} dengan tekstur renyah di luar</strong> {item.voice_description || item.description}
+                    </p>
+
+                    {/* Info Cards */}
+                    <div className="info-cards">
+                        <div className="info-card">
+                            <div className="info-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                                    <line x1="12" y1="19" x2="12" y2="23" />
-                                    <line x1="8" y1="23" x2="16" y2="23" />
+                                    <circle cx="12" cy="12" r="10" />
+                                    <polyline points="12,6 12,12 16,14" />
                                 </svg>
-                                {isPlaying ? 'Berhenti' : 'Putar Deskripsi'}
-                            </button>
-                            <span className="voice-hint-text">
-                                {isPlaying ? 'Sedang memutar...' : 'Klik untuk mendengar deskripsi produk'}
-                            </span>
+                            </div>
+                            <div className="info-label">FRESH BAKED</div>
+                            <div className="info-value">Setiap Hari</div>
                         </div>
-                    )}
+                        <div className="info-card">
+                            <div className="info-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                                    <polyline points="3.27,6.96 12,12.01 20.73,6.96" />
+                                    <line x1="12" y1="22.08" x2="12" y2="12" />
+                                </svg>
+                            </div>
+                            <div className="info-label">ISI</div>
+                            <div className="info-value">{item.quantity || '±50 pcs'}</div>
+                        </div>
+                        <div className="info-card">
+                            <div className="info-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                    <polyline points="22,4 12,14.01 9,11.01" />
+                                </svg>
+                            </div>
+                            <div className="info-label">KUALITAS</div>
+                            <div className="info-value">Premium</div>
+                        </div>
+                    </div>
 
                     {/* Order CTA */}
                     <div className="detail-cta">
@@ -250,6 +275,21 @@ function MenuDetailPage() {
                             </svg>
                             Pesan via WhatsApp
                         </a>
+
+                        {/* Voice Control */}
+                        {(item.voice_file || item.voice_description) && (
+                            <button
+                                className={`btn btn-audio ${isPlaying ? 'playing' : ''}`}
+                                onClick={toggleVoice}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                                </svg>
+                                {isPlaying ? 'Berhenti' : 'Putar Deskripsi Audio'}
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
