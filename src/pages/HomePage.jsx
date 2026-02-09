@@ -268,36 +268,10 @@ function HomePage() {
                             ))}
                         </div>
 
-                        <div className="menu-grid-wrapper">
-                            {totalPages > 1 && (
-                                <button
-                                    className="pagination-arrow pagination-prev"
-                                    onClick={prevPage}
-                                    disabled={currentPage === 0}
-                                >
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M15 18l-6-6 6-6" />
-                                    </svg>
-                                </button>
-                            )}
-
-                            <div className="menu-grid">
-                                {paginatedItems.map((item) => (
-                                    <MenuCard key={item.id} item={item} />
-                                ))}
-                            </div>
-
-                            {totalPages > 1 && (
-                                <button
-                                    className="pagination-arrow pagination-next"
-                                    onClick={nextPage}
-                                    disabled={currentPage === totalPages - 1}
-                                >
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M9 18l6-6-6-6" />
-                                    </svg>
-                                </button>
-                            )}
+                        <div className="menu-grid">
+                            {paginatedItems.map((item) => (
+                                <MenuCard key={item.id} item={item} />
+                            ))}
                         </div>
 
                         {totalPages > 1 && (
@@ -320,31 +294,6 @@ function HomePage() {
                     </>
                 )}
             </section>
-
-            {/* Specials Section */}
-            {/* <section className="specials-section" id="specials">
-                <div className="section-header">
-                    <div className="section-badge">Promo & Layanan</div>
-                    <h2>Penawaran Spesial</h2>
-                </div>
-                <div className="specials-grid">
-                    {specials.map(special => (
-                        <div key={special.id} className="special-card">
-                            <div className="special-icon">
-                                <svg viewBox="0 0 24 24" fill="none" strokeWidth="2">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <polyline points="12,6 12,12 16,14" />
-                                </svg>
-                            </div>
-                            <div className="special-content">
-                                <h3>{special.title}</h3>
-                                <div className="special-time">{special.time_period}</div>
-                                <p>{special.description}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </section> */}
 
             {/* About Section */}
             <section className="about-section" id="about">
