@@ -58,7 +58,7 @@
     right: 1rem;
     width: 45px;
     height: 45px;
-    background: #B48C50;
+    background: #C62828;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -81,12 +81,12 @@
     0%,
     100% {
         transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(180, 140, 80, 0.5);
+        box-shadow: 0 0 0 0 rgba(198, 40, 40, 0.5);
     }
 
     50% {
         transform: scale(1.05);
-        box-shadow: 0 0 0 15px rgba(180, 140, 80, 0);
+        box-shadow: 0 0 0 15px rgba(198, 40, 40, 0);
     }
 }
 
@@ -102,12 +102,12 @@
     left: 0.75rem;
     width: 32px;
     height: 32px;
-    background: linear-gradient(135deg, #E8A94C 0%, #D4922A 100%);
+    background: linear-gradient(135deg, #E53935 0%, #C62828 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 8px rgba(212, 146, 42, 0.3);
+    box-shadow: 0 2px 8px rgba(198, 40, 40, 0.3);
     animation: starPulse 2s infinite;
 }
 
@@ -120,11 +120,11 @@
 @keyframes starPulse {
     0%, 100% {
         transform: scale(1);
-        box-shadow: 0 2px 8px rgba(212, 146, 42, 0.3);
+        box-shadow: 0 2px 8px rgba(198, 40, 40, 0.3);
     }
     50% {
         transform: scale(1.1);
-        box-shadow: 0 4px 16px rgba(212, 146, 42, 0.5);
+        box-shadow: 0 4px 16px rgba(198, 40, 40, 0.5);
     }
 }
 
@@ -132,7 +132,7 @@
     position: absolute;
     bottom: 0.75rem;
     left: 0.75rem;
-    background: linear-gradient(135deg, #E8A94C 0%, #D4922A 100%);
+    background: linear-gradient(135deg, #E53935 0%, #C62828 100%);
     color: #FFFFFF;
     padding: 0.35rem 0.75rem;
     border-radius: 16px;
@@ -140,7 +140,7 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    box-shadow: 0 2px 8px rgba(212, 146, 42, 0.3);
+    box-shadow: 0 2px 8px rgba(198, 40, 40, 0.3);
 }
 
 .menu-card-content {
@@ -149,8 +149,8 @@
 
 .menu-card-header {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
     margin-bottom: 0.5rem;
 }
 
@@ -164,7 +164,7 @@
 .menu-card-price {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #B48C50;
+    color: #C62828;
 }
 
 .menu-card-content p {
@@ -178,7 +178,7 @@
     align-items: center;
     gap: 0.4rem;
     margin-top: 1rem;
-    color: #B48C50;
+    color: #C62828;
     font-size: 0.8rem;
     font-weight: 600;
     letter-spacing: 0.05em;
@@ -192,7 +192,7 @@
 }
 
 .menu-card:hover .menu-card-action {
-    color: #96723D;
+    color: #A01E1E;
 }
 
 .menu-card:hover .menu-card-action svg {

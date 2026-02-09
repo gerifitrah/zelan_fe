@@ -163,7 +163,7 @@ function MenuDetailPage() {
                     <span>KEMBALI KE MENU</span>
                 </Link>
                 <Link to="/" className="logo">
-                    <span className="logo-text">Zelan.</span>
+                    <img src="/logo-light.png" alt="Zelan Bakery" className="detail-logo-img" />
                 </Link>
             </nav>
 

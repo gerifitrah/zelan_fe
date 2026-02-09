@@ -1,4 +1,4 @@
-/* Zelan Bakery Theme - Warm Cream & Gold */
+/* Zelan Bakery Theme - Warm Cream & Red */
 
 /* Top Bar */
 .top-bar {
@@ -12,7 +12,7 @@
 }
 
 .top-bar a {
-    color: #B48C50;
+    color: #C62828;
 }
 
 .top-bar-left {
@@ -29,7 +29,7 @@
 .top-bar-item svg {
     width: 14px;
     height: 14px;
-    stroke: #B48C50;
+    stroke: #C62828;
 }
 
 /* Navigation */
@@ -80,7 +80,7 @@
     left: 0;
     width: 0;
     height: 2px;
-    background: #B48C50;
+    background: #C62828;
     transition: width 0.3s ease;
 }
 
@@ -89,7 +89,7 @@
 }
 
 .nav-cta {
-    background: #B48C50 !important;
+    background: #C62828 !important;
     color: white !important;
     padding: 0.8rem 1.8rem;
     border-radius: 30px;
@@ -100,7 +100,7 @@
 }
 
 .nav-cta:hover {
-    background: #96723D !important;
+    background: #A01E1E !important;
 }
 
 /* Scroll offset for anchor links (accounts for sticky nav) */
@@ -129,7 +129,7 @@
     align-items: center;
     gap: 0.5rem;
     background: #1a1a1a;
-    color: #B48C50;
+    color: #C62828;
     padding: 0.5rem 1.2rem;
     border-radius: 30px;
     font-size: 0.75rem;
@@ -149,7 +149,7 @@
 
 .hero h1 span {
     font-style: italic;
-    color: #B48C50;
+    color: #C62828;
 }
 
 .hero p {
@@ -184,14 +184,14 @@
 }
 
 .btn-primary {
-    background: #B48C50;
+    background: #C62828;
     color: white;
 }
 
 .btn-primary:hover {
-    background: #96723D;
+    background: #A01E1E;
     transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(180, 140, 80, 0.3);
+    box-shadow: 0 10px 30px rgba(198, 40, 40, 0.3);
 }
 
 .btn-secondary {
@@ -238,7 +238,7 @@
     position: absolute;
     width: 350px;
     height: 450px;
-    background: #D4A853;
+    background: #E53935;
     opacity: 0.2;
     border-radius: 200px 200px 30px 30px;
     top: 50%;
@@ -258,7 +258,7 @@
     font-size: 0.75rem;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #B48C50;
+    color: #C62828;
     margin-bottom: 0.5rem;
 }
 
@@ -284,7 +284,7 @@
 }
 
 .menu-section .section-badge {
-    color: #B48C50;
+    color: #C62828;
 }
 
 .menu-section .section-header p {
@@ -314,13 +314,13 @@
 }
 
 .category-btn:hover {
-    border-color: #B48C50;
-    color: #B48C50;
+    border-color: #C62828;
+    color: #C62828;
 }
 
 .category-btn.active {
-    background: #B48C50;
-    border-color: #B48C50;
+    background: #C62828;
+    border-color: #C62828;
     color: #FFFFFF;
 }
 
@@ -345,7 +345,7 @@
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: rgba(180, 140, 80, 0.25);
+    background: rgba(198, 40, 40, 0.25);
     border: none;
     cursor: pointer;
     padding: 0;
@@ -353,12 +353,12 @@
 }
 
 .pagination-dot:hover {
-    background: rgba(180, 140, 80, 0.5);
+    background: rgba(198, 40, 40, 0.5);
     transform: scale(1.2);
 }
 
 .pagination-dot.active {
-    background: #B48C50;
+    background: #C62828;
     transform: scale(1.2);
 }
 
@@ -378,7 +378,7 @@
     width: 40px;
     height: 40px;
     border: 3px solid rgba(196, 30, 58, 0.2);
-    border-top-color: #B48C50;
+    border-top-color: #C62828;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -420,7 +420,7 @@
 .special-icon {
     width: 60px;
     height: 60px;
-    background: #B48C50;
+    background: #C62828;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -442,7 +442,7 @@
 
 .special-time {
     font-size: 0.75rem;
-    color: #B48C50;
+    color: #C62828;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     margin-bottom: 0.5rem;
@@ -495,7 +495,7 @@
 }
 
 .about-content strong {
-    color: #B48C50;
+    color: #C62828;
 }
 
 .about-features {
@@ -511,7 +511,7 @@
 .about-feature-number {
     font-family: 'Playfair Display', serif;
     font-size: 2.5rem;
-    color: #B48C50;
+    color: #C62828;
 }
 
 .about-feature-label {
@@ -565,7 +565,7 @@
 }
 
 .faq-question:hover {
-    color: #B48C50;
+    color: #C62828;
 }
 
 .faq-icon {
@@ -573,7 +573,7 @@
     height: 24px;
     flex-shrink: 0;
     transition: transform 0.3s ease;
-    stroke: #B48C50;
+    stroke: #C62828;
 }
 
 .faq-item.expanded .faq-icon {
@@ -680,8 +680,8 @@
 }
 
 .gallery-page-arrow:hover:not(:disabled) {
-    background: #B48C50;
-    border-color: #B48C50;
+    background: #C62828;
+    border-color: #C62828;
 }
 
 .gallery-page-arrow:hover:not(:disabled) svg {
@@ -725,7 +725,7 @@
 }
 
 .gallery-page-dot.active {
-    background: #B48C50;
+    background: #C62828;
     transform: scale(1.2);
 }
 
@@ -894,7 +894,7 @@
 .contact-item-icon {
     width: 50px;
     height: 50px;
-    background: rgba(180, 140, 80, 0.15);
+    background: rgba(198, 40, 40, 0.15);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -905,7 +905,7 @@
 .contact-item-icon svg {
     width: 20px;
     height: 20px;
-    stroke: #B48C50;
+    stroke: #C62828;
 }
 
 .contact-item-icon.wa-icon svg {
@@ -925,11 +925,11 @@
 
 .contact-item-icon a:hover {
     transform: scale(1.1);
-    background: rgba(180, 140, 80, 0.25);
+    background: rgba(198, 40, 40, 0.25);
 }
 
 .contact-item-icon a:hover svg {
-    stroke: #96723D;
+    stroke: #A01E1E;
 }
 
 .contact-item-icon.wa-icon a:hover {
@@ -945,7 +945,7 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #B48C50;
+    color: #C62828;
     margin-bottom: 0.3rem;
 }
 
@@ -1080,7 +1080,7 @@
 .voice-hint svg {
     width: 18px;
     height: 18px;
-    fill: #B48C50;
+    fill: #C62828;
 }
 
 /* Admin Link */
@@ -1101,7 +1101,7 @@
 }
 
 .admin-link:hover {
-    background: #B48C50;
+    background: #C62828;
     transform: translateY(-2px);
 }
 
