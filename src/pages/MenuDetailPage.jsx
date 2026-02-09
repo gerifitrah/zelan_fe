@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { menuApi, getFileUrl } from '../services/api'
+import MenuCard from '../components/MenuCard'
 import './MenuDetailPage.css'
 
 function MenuDetailPage() {
@@ -10,26 +11,39 @@ function MenuDetailPage() {
     const [isPlaying, setIsPlaying] = useState(false)
     const [currentImageIndex, setCurrentImageIndex] = useState(0)
     const [isFullscreen, setIsFullscreen] = useState(false)
+    const [relatedItems, setRelatedItems] = useState([])
     const audioRef = useRef(null)
 
     useEffect(() => {
+        setCurrentImageIndex(0)
         loadMenuItem()
     }, [id])
 
     useEffect(() => {
-        // Auto-play voice when item is loaded
         if (item && !loading) {
             const timer = setTimeout(() => {
                 playVoice()
-            }, 500) // Small delay for better UX
+            }, 500)
             return () => clearTimeout(timer)
         }
     }, [item, loading])
 
     const loadMenuItem = async () => {
+        setLoading(true)
         try {
             const response = await menuApi.getById(id)
-            setItem(response.data.data)
+            const menuItem = response.data.data
+            setItem(menuItem)
+
+            // Fetch related items from same category
+            if (menuItem.category_id) {
+                const allRes = await menuApi.getAll()
+                const all = allRes.data.data || []
+                const related = all
+                    .filter(i => i.category_id === menuItem.category_id && i.id !== menuItem.id)
+                    .slice(0, 3)
+                setRelatedItems(related)
+            }
         } catch (error) {
             console.error('Error loading menu item:', error)
         } finally {
@@ -77,7 +91,6 @@ function MenuDetailPage() {
         }
     }
 
-    // Cleanup on unmount
     useEffect(() => {
         return () => {
             if (audioRef.current) {
@@ -87,7 +100,6 @@ function MenuDetailPage() {
         }
     }, [])
 
-    // Close fullscreen on ESC key
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === 'Escape' && isFullscreen) {
@@ -119,7 +131,6 @@ function MenuDetailPage() {
         )
     }
 
-    // Get images array or fallback to single image
     const images = item.images && item.images.length > 0
         ? item.images.map(img => ({
             ...img,
@@ -158,6 +169,7 @@ function MenuDetailPage() {
 
             {/* Menu Detail Content */}
             <div className="menu-detail-content">
+                {/* Image Section */}
                 <div className="menu-detail-image-section">
                     <div className="image-card">
                         <div className="menu-detail-image" onClick={() => setIsFullscreen(true)}>
@@ -170,7 +182,6 @@ function MenuDetailPage() {
                             )}
                         </div>
 
-                        {/* Carousel Navigation - Inside card at bottom */}
                         {images.length > 1 && (
                             <div className="carousel-nav-container">
                                 <button className="carousel-btn carousel-prev" onClick={(e) => { e.stopPropagation(); prevImage(); }}>
@@ -187,7 +198,6 @@ function MenuDetailPage() {
                         )}
                     </div>
 
-                    {/* Thumbnails - Below Image */}
                     {images.length > 1 && (
                         <div className="carousel-thumbnails">
                             {images.map((img, index) => (
@@ -203,80 +213,27 @@ function MenuDetailPage() {
                     )}
                 </div>
 
+                {/* Product Info */}
                 <div className="menu-detail-info">
-                    {/* Category Label */}
                     <div className="category-label">
                         <span>{item.category?.name?.toUpperCase() || 'KUE KERING PREMIUM'}</span>
                         <div className="category-line"></div>
                     </div>
 
-                    {/* Product Name */}
                     <h1 className="product-name">{item.name}</h1>
 
-                    {/* Price */}
                     <div className="detail-price">
                         <span className="price-amount">{item.price_display || `Rp ${item.price?.toLocaleString('id-ID')}`}</span>
                         {item.unit && <span className="price-unit">/ {item.unit}</span>}
                     </div>
 
-                    {/* Divider */}
                     <div className="price-divider"></div>
 
-                    {/* Description */}
                     <p className="detail-description">
                         <strong>{item.name} dengan tekstur renyah di luar</strong> {item.voice_description || item.description}
                     </p>
 
-                    {/* Info Cards */}
-                    <div className="info-cards">
-                        <div className="info-card">
-                            <div className="info-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <polyline points="12,6 12,12 16,14" />
-                                </svg>
-                            </div>
-                            <div className="info-label">FRESH BAKED</div>
-                            <div className="info-value">Setiap Hari</div>
-                        </div>
-                        <div className="info-card">
-                            <div className="info-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                                    <polyline points="3.27,6.96 12,12.01 20.73,6.96" />
-                                    <line x1="12" y1="22.08" x2="12" y2="12" />
-                                </svg>
-                            </div>
-                            <div className="info-label">ISI</div>
-                            <div className="info-value">{item.quantity || '±50 pcs'}</div>
-                        </div>
-                        <div className="info-card">
-                            <div className="info-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22,4 12,14.01 9,11.01" />
-                                </svg>
-                            </div>
-                            <div className="info-label">KUALITAS</div>
-                            <div className="info-value">Premium</div>
-                        </div>
-                    </div>
-
-                    {/* Order CTA */}
                     <div className="detail-cta">
-                        <a
-                            href={`https://wa.me/62895385455669?text=Halo, saya ingin memesan ${item.name}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn-whatsapp"
-                        >
-                            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                            </svg>
-                            Pesan via WhatsApp
-                        </a>
-
-                        {/* Voice Control */}
                         {(item.voice_file || item.voice_description) && (
                             <button
                                 className={`btn btn-audio ${isPlaying ? 'playing' : ''}`}
@@ -293,6 +250,21 @@ function MenuDetailPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Related Products */}
+            {relatedItems.length > 0 && (
+                <section className="related-section">
+                    <div className="related-header">
+                        <span className="related-badge">PRODUK LAINNYA</span>
+                        <h2>Menu Serupa</h2>
+                    </div>
+                    <div className="related-grid">
+                        {relatedItems.map(relItem => (
+                            <MenuCard key={relItem.id} item={relItem} />
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* Fullscreen Image Modal */}
             {isFullscreen && (
