@@ -325,6 +325,12 @@ function AdminPage() {
     const [editingFaq, setEditingFaq] = useState(null)
     const [faqFormData, setFaqFormData] = useState({ question: '', answer: '' })
 
+    const [showRegisterModal, setShowRegisterModal] = useState(false)
+    const [registerFormData, setRegisterFormData] = useState({ username: '', password: '', name: '' })
+
+    const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
+    const [changePasswordFormData, setChangePasswordFormData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+
     const addCategory = async () => {
         if (!newCategory.trim()) return
         try {
@@ -395,6 +401,67 @@ function AdminPage() {
         }
     }
 
+    // Register Admin
+    const openRegisterModal = () => {
+        setRegisterFormData({ username: '', password: '', name: '' })
+        setShowRegisterModal(true)
+    }
+
+    const closeRegisterModal = () => {
+        setShowRegisterModal(false)
+        setRegisterFormData({ username: '', password: '', name: '' })
+    }
+
+    const handleRegisterSubmit = async (e) => {
+        e.preventDefault()
+        try {
+            await authApi.register({
+                username: registerFormData.username,
+                password: registerFormData.password,
+                name: registerFormData.name
+            })
+            showToast('Admin registered successfully')
+            closeRegisterModal()
+        } catch (error) {
+            const message = error.response?.data?.message || 'Failed to register admin'
+            showToast(message, 'error')
+        }
+    }
+
+    // Change Password
+    const openChangePasswordModal = () => {
+        setChangePasswordFormData({ currentPassword: '', newPassword: '', confirmPassword: '' })
+        setShowChangePasswordModal(true)
+    }
+
+    const closeChangePasswordModal = () => {
+        setShowChangePasswordModal(false)
+        setChangePasswordFormData({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    }
+
+    const handleChangePasswordSubmit = async (e) => {
+        e.preventDefault()
+        if (changePasswordFormData.newPassword !== changePasswordFormData.confirmPassword) {
+            showToast('New passwords do not match', 'error')
+            return
+        }
+        if (changePasswordFormData.newPassword.length < 6) {
+            showToast('New password must be at least 6 characters', 'error')
+            return
+        }
+        try {
+            await authApi.changePassword({
+                currentPassword: changePasswordFormData.currentPassword,
+                newPassword: changePasswordFormData.newPassword
+            })
+            showToast('Password changed successfully')
+            closeChangePasswordModal()
+        } catch (error) {
+            const message = error.response?.data?.message || 'Failed to change password'
+            showToast(message, 'error')
+        }
+    }
+
     return (
         <div className="admin-page">
             <audio ref={audioRef} />
@@ -405,9 +472,29 @@ function AdminPage() {
                 <div className="sidebar-subtitle">Admin Panel</div>
 
                 <nav className="sidebar-nav">
-                    <a href="#" className="active">
+                    <a href="#stats">
                         <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9,22 9,12 15,12 15,22" /></svg>
                         Dashboard
+                    </a>
+                    <a href="#categories">
+                        <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></svg>
+                        Kategori
+                    </a>
+                    <a href="#faq">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+                        FAQ
+                    </a>
+                    <a href="#menu-items">
+                        <svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" /></svg>
+                        Menu Items
+                    </a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); openRegisterModal() }}>
+                        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" /></svg>
+                        Register Admin
+                    </a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); openChangePasswordModal() }}>
+                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                        Change Password
                     </a>
                 </nav>
 
@@ -438,7 +525,7 @@ function AdminPage() {
                 </div>
 
                 {/* Stats */}
-                <div className="stats-grid">
+                <div id="stats" className="stats-grid">
                     <div className="stat-card">
                         <div className="stat-card-icon">
                             <svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" /></svg>
@@ -470,7 +557,7 @@ function AdminPage() {
                 </div>
 
                 {/* Categories */}
-                <div className="categories-section">
+                <div id="categories" className="categories-section">
                     <div className="categories-header">
                         <h3>Categories</h3>
                     </div>
@@ -497,7 +584,7 @@ function AdminPage() {
                 </div>
 
                 {/* FAQ Section */}
-                <div className="faq-admin-section">
+                <div id="faq" className="faq-admin-section">
                     <div className="faq-admin-header">
                         <h3>FAQ Management</h3>
                         <button className="btn btn-primary btn-sm" onClick={() => openFaqModal()}>
@@ -530,7 +617,7 @@ function AdminPage() {
                 </div>
 
                 {/* Menu Items Table */}
-                <div className="table-container">
+                <div id="menu-items" className="table-container">
                     <div className="table-header">
                         <h3 className="table-title">Menu Items</h3>
                         <div className="table-filters">
@@ -594,6 +681,7 @@ function AdminPage() {
                                     <th>Item</th>
                                     <th>Category</th>
                                     <th>Price</th>
+                                    <th>Tag</th>
                                     <th>Featured</th>
                                     <th>Voice</th>
                                     <th>Actions</th>
@@ -617,6 +705,13 @@ function AdminPage() {
                                         </td>
                                         <td><span className="category-badge">{item.category_name}</span></td>
                                         <td className="price-cell">{item.price_display || `${(item.price / 1000).toFixed(0)}K`}</td>
+                                        <td>
+                                            {item.tag ? (
+                                                <span className="tag-badge">{item.tag}</span>
+                                            ) : (
+                                                <span className="no-tag">-</span>
+                                            )}
+                                        </td>
                                         <td>
                                             {item.is_featured ? (
                                                 <span className="featured-badge">
@@ -913,6 +1008,112 @@ function AdminPage() {
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-secondary" onClick={closeFaqModal}>Cancel</button>
                                 <button type="submit" className="btn btn-primary">Save FAQ</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Register Admin Modal */}
+            {showRegisterModal && (
+                <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeRegisterModal()}>
+                    <div className="modal modal-sm">
+                        <div className="modal-header">
+                            <h3>Register New Admin</h3>
+                            <button className="modal-close" onClick={closeRegisterModal}>
+                                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                            </button>
+                        </div>
+                        <form onSubmit={handleRegisterSubmit}>
+                            <div className="modal-body">
+                                <div className="form-group">
+                                    <label>Name *</label>
+                                    <input
+                                        type="text"
+                                        value={registerFormData.name}
+                                        onChange={(e) => setRegisterFormData({ ...registerFormData, name: e.target.value })}
+                                        required
+                                        placeholder="Full name"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Username *</label>
+                                    <input
+                                        type="text"
+                                        value={registerFormData.username}
+                                        onChange={(e) => setRegisterFormData({ ...registerFormData, username: e.target.value })}
+                                        required
+                                        placeholder="Login username"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Password *</label>
+                                    <input
+                                        type="password"
+                                        value={registerFormData.password}
+                                        onChange={(e) => setRegisterFormData({ ...registerFormData, password: e.target.value })}
+                                        required
+                                        placeholder="Set a password"
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={closeRegisterModal}>Cancel</button>
+                                <button type="submit" className="btn btn-primary">Register Admin</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Change Password Modal */}
+            {showChangePasswordModal && (
+                <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeChangePasswordModal()}>
+                    <div className="modal modal-sm">
+                        <div className="modal-header">
+                            <h3>Change Password</h3>
+                            <button className="modal-close" onClick={closeChangePasswordModal}>
+                                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                            </button>
+                        </div>
+                        <form onSubmit={handleChangePasswordSubmit}>
+                            <div className="modal-body">
+                                <div className="form-group">
+                                    <label>Current Password *</label>
+                                    <input
+                                        type="password"
+                                        value={changePasswordFormData.currentPassword}
+                                        onChange={(e) => setChangePasswordFormData({ ...changePasswordFormData, currentPassword: e.target.value })}
+                                        required
+                                        placeholder="Enter current password"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>New Password *</label>
+                                    <input
+                                        type="password"
+                                        value={changePasswordFormData.newPassword}
+                                        onChange={(e) => setChangePasswordFormData({ ...changePasswordFormData, newPassword: e.target.value })}
+                                        required
+                                        minLength={6}
+                                        placeholder="Enter new password (min 6 characters)"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Confirm New Password *</label>
+                                    <input
+                                        type="password"
+                                        value={changePasswordFormData.confirmPassword}
+                                        onChange={(e) => setChangePasswordFormData({ ...changePasswordFormData, confirmPassword: e.target.value })}
+                                        required
+                                        minLength={6}
+                                        placeholder="Confirm new password"
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={closeChangePasswordModal}>Cancel</button>
+                                <button type="submit" className="btn btn-primary">Change Password</button>
                             </div>
                         </form>
                     </div>

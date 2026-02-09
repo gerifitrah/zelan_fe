@@ -104,6 +104,11 @@
     margin-left: 260px;
     padding: 2rem;
     flex: 1;
+    scroll-behavior: smooth;
+}
+
+#stats, #categories, #faq, #menu-items {
+    scroll-margin-top: 1rem;
 }
 
 .page-header {
@@ -552,6 +557,22 @@ tr:hover td {
 .price-cell {
     font-weight: 600;
     color: var(--terracotta);
+}
+
+.tag-badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    background: rgba(212, 168, 83, 0.15);
+    color: var(--gold);
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.no-tag {
+    opacity: 0.3;
 }
 
 .voice-badge {

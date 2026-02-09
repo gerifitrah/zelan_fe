@@ -82,7 +82,9 @@ export const specialsApi = {
 // Auth API
 export const authApi = {
     login: (credentials) => api.post('/auth/login', credentials),
-    logout: () => api.post('/auth/logout')
+    logout: () => api.post('/auth/logout'),
+    register: (data) => api.post('/auth/register', data),
+    changePassword: (data) => api.put('/auth/change-password', data)
 };
 
 // Stats API
