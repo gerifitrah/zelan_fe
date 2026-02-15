@@ -1,0 +1,46 @@
+graph TB
+    E1([fa:fa-user Customer])
+    E2([fa:fa-user-shield Admin])
+    E3[(fa:fa-server Backend Server)]
+    DS8[(DS8: LocalStorage)]
+
+    E1 -->|"Page Request"| P1
+    P1 -->|"Data Request"| P2
+    P2 -->|"GET /categories<br/>GET /menu<br/>GET /faqs<br/>GET /specials"| E3
+    E3 -->|"Categories, Menu Items,<br/>FAQs, Specials"| P2
+    P2 -->|"All Public Data"| P1
+    P1 -->|"Rendered Homepage"| E1
+
+    E1 -->|"Click Menu Item (ID)"| P4
+    P4 -->|"GET /menu/:id"| E3
+    E3 -->|"Item Detail + Images<br/>+ Voice File"| P4
+    P4 -->|"Detail Page + Carousel<br/>+ Voice Playback"| E1
+
+    E2 -->|"Login Credentials"| P3
+    P3 -->|"POST /auth/login"| E3
+    E3 -->|"Token + User Data"| P3
+    P3 -->|"authToken, isAuthenticated"| DS8
+    DS8 -->|"Token Validation"| P3
+    P3 -->|"Access Granted / Denied"| E2
+
+    DS8 -->|"Bearer Token"| P5
+    E2 -->|"CRUD Operations"| P5
+    P5 -->|"API Requests<br/>(with Auth Header)"| E3
+    E3 -->|"CRUD Results + Stats"| P5
+    P5 -->|"Updated Data + Confirmations"| E2
+
+    P1{{"P1<br/>Browse Public<br/>Content"}}
+    P2{{"P2<br/>Fetch Public<br/>Data"}}
+    P3{{"P3<br/>Authenticate<br/>Admin"}}
+    P4{{"P4<br/>View Menu<br/>Detail"}}
+    P5{{"P5<br/>Manage Content<br/>(Admin)"}}
+
+    style P1 fill:#ffffff,stroke:#2563eb,stroke-width:2px,color:#1e293b
+    style P2 fill:#ffffff,stroke:#2563eb,stroke-width:2px,color:#1e293b
+    style P3 fill:#ffffff,stroke:#2563eb,stroke-width:2px,color:#1e293b
+    style P4 fill:#ffffff,stroke:#2563eb,stroke-width:2px,color:#1e293b
+    style P5 fill:#ffffff,stroke:#2563eb,stroke-width:2px,color:#1e293b
+    style E1 fill:#dbeafe,stroke:#2563eb,color:#1e293b
+    style E2 fill:#fee2e2,stroke:#dc2626,color:#1e293b
+    style E3 fill:#dcfce7,stroke:#16a34a,color:#1e293b
+    style DS8 fill:#fef9c3,stroke:#ca8a04,color:#1e293b

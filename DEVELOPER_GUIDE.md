@@ -39,9 +39,10 @@ This guide covers the architecture, coding conventions, and development practice
 │                   (React Router setup)                      │
 ├─────────────────────────────────────────────────────────────┤
 │  Routes:                                                    │
-│    /        → HomePage                                      │
-│    /login   → LoginPage                                     │
-│    /admin/* → AdminPage (Protected)                         │
+│    /          → HomePage                                    │
+│    /menu/:id  → MenuDetailPage                              │
+│    /login     → LoginPage                                   │
+│    /admin/*   → AdminPage (Protected)                       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -76,8 +77,8 @@ All colors are defined as CSS custom properties in `src/styles/global.css`:
 --light-cream: #FAF7F2;     /* Lighter backgrounds */
 
 /* Accent Colors */
---terracotta: #C75B39;      /* Primary CTA buttons */
---gold: #D4A853;            /* Pricing, highlights */
+--terracotta: #C62828;      /* Primary CTA buttons */
+--gold: #E53935;            /* Pricing, highlights */
 --sage: #7A8B6E;            /* Tertiary accent */
 --warm-brown: #8B7355;      /* Supporting color */
 
@@ -120,9 +121,10 @@ Located in `src/pages/`:
 
 | Component | Route | Description |
 |-----------|-------|-------------|
-| `HomePage.jsx` | `/` | Customer-facing landing page |
+| `HomePage.jsx` | `/` | Customer-facing landing page with menu, gallery, FAQ, about, and contact sections |
+| `MenuDetailPage.jsx` | `/menu/:id` | Individual menu item detail view with image carousel, audio player, and related products |
 | `LoginPage.jsx` | `/login` | Admin authentication |
-| `AdminPage.jsx` | `/admin` | Protected admin dashboard |
+| `AdminPage.jsx` | `/admin` | Protected admin dashboard with CRUD for menu items, categories, FAQs, and user management |
 
 ### Reusable Components
 
@@ -130,33 +132,53 @@ Located in `src/components/`:
 
 | Component | Props | Description |
 |-----------|-------|-------------|
-| `MenuCard` | `item`, `uploadsUrl` | Displays menu item with voice feature |
+| `MenuCard` | `item` | Displays menu item card with image, price, and link to detail page |
 
 ### MenuCard Component
 
 The `MenuCard` component handles:
-- Image display with hover zoom effect
-- Voice playback on hover (MP3 priority, TTS fallback)
-- Featured badge with animation
-- Custom tag display
+- Image display with overlay effect
+- Multi-image support (prioritizes `images` array with `is_main` flag, falls back to `image_url`)
+- Featured star badge
+- Custom tag display (e.g., "Best Seller")
+- Links to `/menu/:id` detail page via "Lihat Detail" CTA
 
 ```jsx
 <MenuCard
   item={{
     id: 1,
     name: "Chocolate Cake",
-    price: "25.00",
-    displayPrice: "Rp 25.000",
+    price: 25000,
+    display_price: "Rp 25.000",
     description: "Rich chocolate cake",
-    image: "/uploads/images/cake.jpg",
-    voiceFile: "/uploads/audio/cake.mp3",
-    voiceDescription: "Delicious chocolate cake",
-    featured: true,
+    images: [
+      { id: 1, image_url: "/uploads/images/cake.jpg", is_main: true }
+    ],
+    is_featured: true,
     tag: "Best Seller"
   }}
-  uploadsUrl="http://localhost:3000"
 />
 ```
+
+### MenuDetailPage Features
+
+The `MenuDetailPage` component provides:
+- Product image carousel with thumbnail navigation
+- Fullscreen image viewer
+- Audio player for voice descriptions (MP3 upload or text-to-speech fallback)
+- Auto-plays voice description on page load (500ms delay)
+- Related products section (3 items from the same category)
+- Back navigation to the menu section
+
+### AdminPage Features
+
+The `AdminPage` component provides:
+- **Dashboard**: Stats overview (total items, categories, featured items, voice-enabled items)
+- **Category Management**: Create and delete categories
+- **Menu Items**: Full CRUD with multi-image upload (up to 4), voice file upload, featured flag, tags, unit field
+- **FAQ Management**: Create, edit, and delete FAQ entries
+- **User Management**: Register new admin accounts, change password
+- **Toast Notifications**: Success/error feedback for all operations
 
 ---
 
@@ -241,6 +263,10 @@ menuApi.getById(id)              // GET /menu/:id
 menuApi.create(formData)         // POST /menu (multipart)
 menuApi.update(id, formData)     // PUT /menu/:id (multipart)
 menuApi.delete(id)               // DELETE /menu/:id
+menuApi.uploadVoice(id, formData)       // POST /menu/:id/voice (multipart)
+menuApi.uploadImage(id, formData)       // POST /menu/:id/images (multipart)
+menuApi.deleteImage(menuId, imageId)    // DELETE /menu/:menuId/images/:imageId
+menuApi.setMainImage(menuId, imageId)   // PUT /menu/:menuId/images/:imageId/main
 ```
 
 #### Specials API
@@ -265,6 +291,17 @@ faqApi.delete(id)                // DELETE /faqs/:id
 ```javascript
 authApi.login(credentials)       // POST /auth/login
 authApi.logout()                 // POST /auth/logout
+authApi.register(data)           // POST /auth/register
+authApi.changePassword(data)     // PUT /auth/change-password
+```
+
+#### Gallery API
+```javascript
+galleryApi.getAll()              // GET /gallery
+galleryApi.getById(id)           // GET /gallery/:id
+galleryApi.create(formData)      // POST /gallery (multipart)
+galleryApi.update(id, formData)  // PUT /gallery/:id (multipart)
+galleryApi.delete(id)            // DELETE /gallery/:id
 ```
 
 #### Utilities
@@ -297,6 +334,7 @@ await menuApi.create(formData);
 <BrowserRouter>
   <Routes>
     <Route path="/" element={<HomePage />} />
+    <Route path="/menu/:id" element={<MenuDetailPage />} />
     <Route path="/login" element={<LoginPage />} />
     <Route
       path="/admin/*"
@@ -368,6 +406,26 @@ const handleLogout = () => {
   localStorage.removeItem('isAuthenticated');
   localStorage.removeItem('user');
   navigate('/login');
+};
+```
+
+### Register New Admin
+
+Admins can register new admin accounts from the admin dashboard:
+
+```javascript
+const handleRegister = async (username, password) => {
+  await authApi.register({ username, password });
+};
+```
+
+### Change Password
+
+Admins can change their password from the admin dashboard:
+
+```javascript
+const handleChangePassword = async (currentPassword, newPassword) => {
+  await authApi.changePassword({ currentPassword, newPassword });
 };
 ```
 
@@ -526,7 +584,7 @@ import './HomePage.css';
 
 **Problem**: 404 errors when calling API endpoints
 
-**Solution**: Ensure the backend server is running on port 3000. The Vite dev server proxies `/api` requests to `http://localhost:3000`.
+**Solution**: The Vite dev server proxies both `/api` and `/uploads` requests to the backend. By default, the proxy points to the production Railway backend (`https://zelanbe-production.up.railway.app`). For local development, update `vite.config.js` to proxy to `http://localhost:3000`.
 
 #### Images Not Loading
 
@@ -546,15 +604,16 @@ import './HomePage.css';
 2. Verify the token hasn't expired
 3. Check `isAuthenticated` flag is set to `'true'` (string)
 
-#### Voice Not Playing on Hover
+#### Voice Not Playing on Detail Page
 
-**Problem**: Menu item voice doesn't play
+**Problem**: Menu item voice doesn't play on the detail page
 
 **Solution**:
 1. Check browser autoplay policies (user interaction may be required)
 2. Verify the MP3 file exists at the specified path
 3. Check browser console for audio errors
 4. Ensure text-to-speech fallback is working (check `speechSynthesis` support)
+5. Note: Voice auto-plays on `MenuDetailPage` load with a 500ms delay
 
 ### Development Tips
 
@@ -572,4 +631,46 @@ import './HomePage.css';
 | `VITE_API_URL` | `/api` | Backend API base URL |
 | `VITE_UPLOADS_URL` | `''` | Base URL for uploaded files |
 
+### Production Values (`.env.production`)
+
+```
+VITE_API_URL=https://zelanbe-production.up.railway.app/api
+VITE_UPLOADS_URL=https://zelanbe-production.up.railway.app
+```
+
 Create a `.env.local` file for local overrides (not committed to git).
+
+---
+
+## Build & Deployment
+
+### Vite Dev Server
+
+The dev server runs on port **5173** with proxy configuration in `vite.config.js`:
+
+```javascript
+server: {
+  port: 5173,
+  proxy: {
+    '/api': {
+      target: 'https://zelanbe-production.up.railway.app',
+      changeOrigin: true,
+    },
+    '/uploads': {
+      target: 'https://zelanbe-production.up.railway.app',
+      changeOrigin: true,
+    }
+  }
+}
+```
+
+### Dependencies
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `react` | ^18.2.0 | UI framework |
+| `react-dom` | ^18.2.0 | React DOM renderer |
+| `react-router-dom` | ^6.20.1 | Client-side routing |
+| `axios` | ^1.6.2 | HTTP client |
+| `vite` | ^5.0.0 | Build tool & dev server |
+| `@vitejs/plugin-react` | ^4.2.0 | React support for Vite |

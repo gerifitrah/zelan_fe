@@ -362,8 +362,8 @@ function HomePage() {
             <section className="gallery-section" id="gallery">
                 <div className="section-header">
                     <div className="section-badge">Galeri</div>
-                    <h2>Momen Bersama Zelan</h2>
-                    <p>Lihat koleksi foto produk dan momen spesial kami</p>
+                    <h2>Koleksi Produk Zelan</h2>
+                    <p>Semua varian terbaik kami, dalam satu tampilan</p>
                 </div>
 
                 {displayGalleryImages.length > 0 && (
