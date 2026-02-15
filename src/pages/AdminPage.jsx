@@ -223,7 +223,8 @@ function AdminPage() {
             Object.keys(formData).forEach(key => {
                 // Skip image_url - images are managed separately via Images section
                 if (key === 'image_url') return
-                if (formData[key] !== '' && formData[key] !== null) {
+                // Allow empty strings to clear fields, but skip null/undefined
+                if (formData[key] !== null && formData[key] !== undefined) {
                     data.append(key, formData[key])
                 }
             })
