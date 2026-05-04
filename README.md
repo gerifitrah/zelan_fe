@@ -151,6 +151,3 @@ Private - All rights reserved.
 ## Related
 
 - Backend API repository (see parent directory)
-
-
-geri
