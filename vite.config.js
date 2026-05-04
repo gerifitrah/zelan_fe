@@ -9,13 +9,15 @@ export default defineConfig({
       '/api': {
         // target: 'http://localhost:3000',
         // target: 'https://zelanbe-production.up.railway.app',
-        target: 'https://zelan-production.up.railway.app',
+        // target: 'https://zelan-production.up.railway.app',
+        target: 'https://pretty-smile-production.up.railway.app',
         changeOrigin: true
       },
       '/uploads': {
         // target: 'http://localhost:3000',
         // target: 'https://zelanbe-production.up.railway.app',
-        target: 'https://zelan-production.up.railway.app',
+        // target: 'https://zelan-production.up.railway.app',
+        target: 'https://pretty-smile-production.up.railway.app',
         changeOrigin: true
       }
     }
